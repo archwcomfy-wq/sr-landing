@@ -191,7 +191,10 @@ function planHtml() {
     }
     const rows = p.picks.filter(x => x.pick).map(x => {
       const q = quoteOf(x.symbol), now = q?.last ?? x.now ?? x.last;
-      const st = x.tp_reached ? '<span class="chip ok">ถึงเป้าขายแล้ว</span>' : x.bid_reached ? '<span class="chip ok">ซื้อได้แล้ว (ราคาลงถึง bid)</span>' : '<span class="chip">รอราคาลงถึง bid</span>';
+      const st = x.tp_reached ? '<span class="chip ok">ถึงเป้าขาย หลังราคาแตะ bid</span>'
+        : x.below_bid ? '<span class="chip ok">ราคาลงต่ำกว่า bid แล้ว (คำสั่งที่รอไว้น่าจะได้ของ)</span>'
+        : x.bid_reached ? '<span class="chip ok">ราคาแตะ bid แล้ว: ตรวจในแอปโบรกว่าได้ของจริงไหม</span>'
+        : x.expired ? '<span class="chip">เลยเวลายกเลิก ไม่ถึง bid</span>' : '<span class="chip">รอราคาลงถึง bid</span>';
       const nr = p.now_rank?.[x.symbol];
       return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
         <td>${num(x.last)} <span class="mut">(${pct(x.chg)})</span></td><td>${num(now)} <span class="mut">(${pct(q?.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
