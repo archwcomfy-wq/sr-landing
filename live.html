@@ -191,17 +191,20 @@ function planHtml() {
     }
     const rows = p.picks.filter(x => x.pick).map(x => {
       const q = quoteOf(x.symbol), now = q?.last ?? x.now ?? x.last;
-      const st = x.tp_reached ? '<span class="chip ok">ถึงเป้าขาย</span>' : x.bid_reached ? '<span class="chip ok">ราคาแตะ bid</span>' : '<span class="chip">รอ</span>';
+      const st = x.tp_reached ? '<span class="chip ok">ถึงเป้าขายแล้ว</span>' : x.bid_reached ? '<span class="chip ok">ซื้อได้แล้ว (ราคาลงถึง bid)</span>' : '<span class="chip">รอราคาลงถึง bid</span>';
       const nr = p.now_rank?.[x.symbol];
       return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
-        <td>${pct(x.chg)}</td><td>${num(now)}</td><td>${pct(q?.chg)}</td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
-        <td>${x.p_tp != null ? Math.round(x.p_tp * 100) + '%' : '–'}</td><td>${pct(x.ev)}</td><td>${nr ? '#' + nr : '<span class="mut">หลุด</span>'}</td><td>${st}</td>
+        <td>${num(x.last)} <span class="mut">(${pct(x.chg)})</span></td><td>${num(now)} <span class="mut">(${pct(q?.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
+        <td>${x.p_tp != null ? Math.round(x.p_tp * 100) + '%' : '–'}</td><td>${pct(x.ev)}</td><td>${nr ? '#' + nr : '<span class="mut">ไม่ติด 5 อันดับ</span>'}</td><td>${st}</td>
         <td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
     }).join('');
     const top = (p.now_detail || []).filter(d => !p.picks.some(x => x.pick && x.symbol === d.symbol));
     out.push(`<div class="card" style="border:2px solid var(--acc)"><b>รายการคัดกลุ่มนำ ${esc(p.code)}</b> <span class="mut">ตั้งเมื่อ ${esc(p.created)} · เรียงจากดีที่สุด · คุณเลือกเอง</span>
-      <div class="wrap"><table><tr><th>#</th><th class="l">หุ้น</th><th>ตอนตั้ง</th><th>ล่าสุด</th><th>วันนี้</th><th>ตั้ง bid</th><th>เป้าขาย +${(p.take_profit * 100).toFixed(1)}%</th>
-      <th>โอกาสถึงเป้า*</th><th>ผลเฉลี่ย*</th><th>อันดับตอนนี้</th><th>สถานะ</th><th></th></tr>${rows}</table></div>
+      <div class="wrap"><table><tr><th>อันดับ</th><th class="l">หุ้น</th><th>ราคาตลาดตอนตั้งแผน<span class="th">(% เทียบปิดวานนี้)</span></th>
+      <th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th><th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาตอนตั้งแผน ${p.bid_ticks} ช่อง</span></th>
+      <th>ราคาเป้าขาย<span class="th">bid +${(p.take_profit * 100).toFixed(1)}%</span></th>
+      <th>โอกาสถึงเป้า*<span class="th">เมื่อซื้อได้</span></th><th>กำไรเฉลี่ยย้อนหลัง*<span class="th">ต่อรายการ</span></th>
+      <th>อันดับเมื่อคัดใหม่<span class="th">ล่าสุด ${esc(p.now_hm || '')}</span></th><th>สถานะ</th><th></th></tr>${rows}</table></div>
       ${top.length ? `<div style="margin-top:6px"><b>ถ้าคัดใหม่ตอนนี้ (${esc(p.now_hm || '')}) จะมีเพิ่ม:</b> ${top.map(d => `<a href="#" onclick="addExtra('${d.symbol}');return false"><b>${esc(d.symbol)}</b></a>${d.source === 'reserve' ? ' (สำรอง)' : d.source === 'other_group' ? ' (' + esc(d.code) + ')' : ''} #${d.rank} ${pct(d.chg)} bid ${num(d.bid)} เป้า ${num(d.tp)}`).join(' · ')}</div>` : ''}
       <div class="mut">bid ต่ำกว่าราคาตอนตั้ง ${p.bid_ticks} ช่อง · ยกเลิกถ้าไม่ได้ของภายใน ${esc(p.cancel_after)} · ไม่ถึงเป้าขายตอนปิด · *ทดสอบย้อนหลัง 55 วัน ตามอันดับ (โอกาสถึงเป้าเมื่อได้ของ) · สำรอง = กลุ่มนำ บวกแต่ซื้อขายเบา ยังไม่มีสถิติทดสอบ · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`);
   }
