@@ -1,0 +1,92 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>SR ห้องติดตาม</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="sr-config.js"></script><style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--mut:#6b6a66;--line:#e4e1da;--card:#fff;--acc:#0f6e5a;--pos:#0f7a3a;--neg:#b3261e;--hi:#fff4d6;--chip:#eef4f1}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#151514;--fg:#ecebe6;--mut:#a3a29c;--line:#33322f;--card:#1e1e1c;--acc:#5cc3a6;--pos:#5fcf86;--neg:#ff8a80;--hi:#3a3220;--chip:#22302b}}
+:root[data-theme=dark]{--bg:#151514;--fg:#ecebe6;--mut:#a3a29c;--line:#33322f;--card:#1e1e1c;--acc:#5cc3a6;--pos:#5fcf86;--neg:#ff8a80;--hi:#3a3220;--chip:#22302b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 "Noto Sans Thai","Leelawadee UI",system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:12px 16px 40px}h1{font-size:20px;margin:6px 0 2px}h2{font-size:16px;margin:22px 0 8px;color:var(--acc)}
+.mut{color:var(--mut);font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
+td.l,th.l{text-align:left}td.l{white-space:normal;min-width:110px}.th{display:block;font-size:11.5px;color:var(--mut);line-height:1.25}.pos{color:var(--pos)}.neg{color:var(--neg)}tr.top td{background:var(--hi)}
+.chip{display:inline-block;padding:1px 7px;border-radius:999px;background:var(--chip);font-size:12px;margin:1px 2px}
+.ok{background:var(--pos);color:#fff}.big{font-size:22px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+a{color:var(--acc)}ul{padding-left:18px;margin:4px 0}li{margin:3px 0}
+
+html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;flex-direction:column;flex:1;min-height:0}#app[hidden],#login[hidden]{display:none}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+.bar b{font-size:16px}.tabs button,.btn{font:inherit;font-size:13.5px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--fg);cursor:pointer}
+.tabs button.on,.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
+.dot.on{background:var(--pos)}#view{flex:1;width:100%;border:0;background:var(--bg)}.sp{flex:1}
+#login{max-width:420px;margin:12vh auto;padding:0 16px}#login input{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);margin:8px 0}
+</style></head><body><section id="login" hidden><div class="card"><h1>SR ห้องติดตาม</h1><div class="mut">เข้าระบบด้วยลิงก์ทางอีเมล (เฉพาะเจ้าของ)</div>
+<form id="loginform"><input id="email" type="email" required autocomplete="email"><button class="btn pri" type="submit">ส่งลิงก์เข้าระบบ</button></form>
+<div class="mut" id="msg"></div></div><div class="mut">งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></section>
+<section id="app" hidden><div class="bar"><b>SR ห้องติดตาม</b><span class="dot" id="dot"></span><span class="mut" id="stage">กำลังโหลด…</span><span class="sp"></span>
+<span class="tabs"><button data-tab="auto">อัตโนมัติ</button> <button data-tab="premarket">ก่อนตลาดเปิด</button> <button data-tab="live">Live</button>
+<button data-tab="evening">ผลประเมินเย็น</button></span><span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn" id="logout">ออก</button></div>
+<iframe id="view" title="SR"></iframe></section><script>
+window.SB = window.supabase.createClient(SR_CONFIG.url, SR_CONFIG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}});
+async function srDoc(key, col) {
+  const {data, error} = await SB.from('sr_docs').select(col + ',updated_at').eq('key', key).maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('no ' + key);
+  return data;
+}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+               set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }};
+const VIEW = {premarket: {doc: 'premarket'}, live: {src: 'live.html'}, live_done: {src: 'live.html'}, evening: {doc: 'evening'}};
+let TAB = store.get('sr_tab', 'auto'), STAGE = null, SHOWN = '', TIMER = null;
+
+async function show(stage) {
+  const v = VIEW[stage] || VIEW.premarket, f = $('#view');
+  if (v.src) { if (SHOWN !== v.src) { SHOWN = v.src; f.removeAttribute('srcdoc'); f.src = v.src; } return; }
+  try {
+    const d = await srDoc(v.doc, 'html'), tag = v.doc + d.updated_at;
+    if (SHOWN === tag) return;
+    SHOWN = tag; f.removeAttribute('src');
+    f.srcdoc = (d.html || '').replace('<head>', '<head><base target="_blank">');
+  } catch (e) {
+    SHOWN = ''; f.removeAttribute('src');
+    f.srcdoc = '<p style="font:15px system-ui;padding:20px;color:#777">ยังไม่มีข้อมูลส่วนนี้ (งานบนเครื่องจะส่งขึ้นมาเมื่อทำเสร็จ)</p>';
+  }
+}
+function pick(tab) {
+  TAB = tab; store.set('sr_tab', tab);
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  apply();
+}
+function apply() { show(TAB === 'auto' ? (STAGE?.stage || 'premarket') : TAB); }
+async function poll() {
+  try {
+    const d = await srDoc('landing', 'data'), j = d.data;
+    STAGE = j; $('#stage').textContent = j.label + ' · อัปเดต ' + String(j.updated).slice(5, 16) + (j.note ? ' · ' + j.note : '');
+    $('#dot').className = 'dot on';
+  } catch (e) { $('#dot').className = 'dot'; $('#stage').textContent = 'ยังไม่มีข้อมูลจากเครื่อง หรือเชื่อมต่อไม่ได้'; }
+  apply();
+}
+function tick() { $('#clock').textContent = new Date().toLocaleTimeString('th-TH', {hour12: false, timeZone: 'Asia/Bangkok'}); }
+
+async function signIn(ev) {
+  ev.preventDefault();
+  const email = $('#email').value.trim();
+  $('#msg').textContent = 'กำลังส่ง…';
+  const {error} = await SB.auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname}});
+  $('#msg').textContent = error ? 'ส่งไม่สำเร็จ: ' + error.message : 'ส่งลิงก์เข้าระบบไปที่ ' + email + ' แล้ว เปิดอีเมลแล้วกดลิงก์ (ใช้เบราว์เซอร์เดียวกับหน้านี้)';
+}
+async function render() {
+  const {data: {session}} = await SB.auth.getSession();
+  $('#login').hidden = !!session; $('#app').hidden = !session;
+  if (!session) { clearInterval(TIMER); TIMER = null; return; }
+  $('#who').textContent = session.user.email;
+  if (!TIMER) { pick(TAB); poll(); TIMER = setInterval(poll, 10000); }
+}
+$('#email').value = SR_CONFIG.owner;
+$('#loginform').addEventListener('submit', signIn);
+$('#logout').addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; render(); });
+document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => pick(b.dataset.tab));
+SB.auth.onAuthStateChange(() => render());
+render(); tick(); setInterval(tick, 1000);
+</script></body></html>
