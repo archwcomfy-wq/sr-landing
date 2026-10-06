@@ -18,21 +18,50 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 .tabs button.on,.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
 .dot.on{background:var(--pos)}#view{flex:1;width:100%;border:0;background:var(--bg)}.sp{flex:1}#members{flex:1;overflow:auto;padding:0 16px 30px;max-width:1100px}
 .gate{max-width:440px;margin:9vh auto;padding:0 16px}.gate input,.gate textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);margin:4px 0 8px}
-.gate label{font-size:13px;color:var(--mut)}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
+.gate label{display:block;font-size:13px;color:var(--mut)}.gate form .mut{margin:6px 0 10px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:10px 0 6px}.seg button{flex:1;font:inherit;font-size:14px;padding:8px;border:0;background:var(--card);color:var(--fg);cursor:pointer}
+.seg button.on{background:var(--acc);color:#fff}.btn.wide{padding:7px 18px;font-size:14px}.links{font-size:13px;margin-top:10px}.links a{color:var(--acc)}
+.msg{font-size:13.5px;margin-top:10px;color:var(--neg,#c0392b)}.msg.ok{color:var(--mut)}.msg:empty{display:none}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
 </style></head><body><section id="login" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1>
-<div class="mut">เข้าสู่ระบบหรือสมัครสมาชิกด้วยลิงก์ทางอีเมล · สมาชิกใหม่ต้องรอผู้ดูแลอนุมัติก่อนเข้าใช้</div>
-<form id="loginform"><label>อีเมล</label><input id="email" type="email" required autocomplete="email">
-<label>ชื่อที่ให้ผู้ดูแลเห็น (สำหรับสมัครครั้งแรก)</label><input id="fullname" maxlength="100" autocomplete="name">
-<label>เหตุผลที่ขอเข้าใช้ (ไม่บังคับ)</label><textarea id="note" rows="2" maxlength="300"></textarea>
-<div class="chk"><input id="accept" type="checkbox"><span>รับทราบว่าข้อมูลในเว็บนี้เป็นงานวิจัยเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน และจะไม่นำไปเผยแพร่ต่อ</span></div>
-<button class="btn pri" type="submit">ส่งลิงก์เข้าระบบ / สมัคร</button></form>
-<div class="mut" id="msg" style="margin-top:8px"></div></div></section>
+<div class="seg"><button type="button" data-mode="login">เข้าสู่ระบบ</button><button type="button" data-mode="register">สมัครสมาชิกใหม่</button></div>
+
+<form id="f-login" hidden><div class="mut">สำหรับสมาชิกที่สมัครแล้ว</div>
+<label for="li-email">อีเมล</label><input id="li-email" type="email" required autocomplete="username">
+<label for="li-pw">รหัสผ่าน</label><input id="li-pw" type="password" required autocomplete="current-password">
+<button class="btn pri wide" type="submit">เข้าสู่ระบบ</button>
+<div class="links"><a href="#" data-goto="forgot">ลืมรหัสผ่าน / ยังไม่เคยตั้งรหัสผ่าน</a> · <a href="#" data-goto="register">ยังไม่เป็นสมาชิก? สมัครที่นี่</a></div>
+<div id="m-login" class="msg"></div></form>
+
+<form id="f-register" hidden><div class="mut">สมัครแล้วต้องกดลิงก์ยืนยันในอีเมลหนึ่งครั้ง แล้วรอผู้ดูแลอนุมัติก่อนเข้าใช้</div>
+<label for="rg-email">อีเมล</label><input id="rg-email" type="email" required autocomplete="email">
+<label for="rg-name">ชื่อที่ให้ผู้ดูแลเห็น</label><input id="rg-name" maxlength="100" required autocomplete="name">
+<label for="rg-note">เหตุผลที่ขอเข้าใช้ (ไม่บังคับ)</label><textarea id="rg-note" rows="2" maxlength="300"></textarea>
+<label for="rg-pw">ตั้งรหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label><input id="rg-pw" type="password" required minlength="8" autocomplete="new-password">
+<label for="rg-pw2">ยืนยันรหัสผ่าน</label><input id="rg-pw2" type="password" required minlength="8" autocomplete="new-password">
+<div class="chk"><input id="rg-accept" type="checkbox"><span>รับทราบว่าข้อมูลในเว็บนี้เป็นงานวิจัยเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน และจะไม่นำไปเผยแพร่ต่อ</span></div>
+<button class="btn pri wide" type="submit">สมัครสมาชิก</button>
+<div class="links"><a href="#" data-goto="login">เป็นสมาชิกแล้ว? เข้าสู่ระบบ</a></div>
+<div id="m-register" class="msg"></div></form>
+
+<form id="f-forgot" hidden><div class="mut">ใส่อีเมลที่สมัครไว้ ระบบจะส่งลิงก์ให้ตั้งรหัสผ่านใหม่ (ใช้ได้ทั้งกรณีลืมรหัส และสมาชิกเดิมที่ยังไม่เคยตั้งรหัสผ่าน)</div>
+<label for="fg-email">อีเมล</label><input id="fg-email" type="email" required autocomplete="email">
+<button class="btn pri wide" type="submit">ส่งลิงก์ตั้งรหัสผ่าน</button>
+<div class="links"><a href="#" data-goto="login">กลับไปเข้าสู่ระบบ</a></div>
+<div id="m-forgot" class="msg"></div></form></div></section>
+
+<section id="setpw" class="gate" hidden><div class="card"><h1 id="sp-title">ตั้งรหัสผ่านใหม่</h1>
+<form id="f-setpw"><input type="email" autocomplete="username" hidden>
+<label for="sp-pw">รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label><input id="sp-pw" type="password" required minlength="8" autocomplete="new-password">
+<label for="sp-pw2">ยืนยันรหัสผ่านใหม่</label><input id="sp-pw2" type="password" required minlength="8" autocomplete="new-password">
+<button class="btn pri wide" type="submit">บันทึกรหัสผ่าน</button> <button class="btn wide" type="button" id="sp-cancel">ยกเลิก</button>
+<div id="m-setpw" class="msg"></div></form></div></section>
+
 <section id="wait" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1><div id="waitmsg"></div>
-<div style="margin-top:10px"><button class="btn pri" id="recheck">ตรวจสถานะอีกครั้ง</button> <button class="btn logout">ออกจากระบบ</button></div></div></section>
+<div style="margin-top:10px"><button class="btn pri" id="recheck">ตรวจสถานะอีกครั้ง</button> <button class="btn changepw">ตั้ง/เปลี่ยนรหัสผ่าน</button> <button class="btn logout">ออกจากระบบ</button></div></div></section>
 <section id="app" hidden><div class="bar"><b>SR ห้องติดตาม</b><span class="dot" id="dot"></span><span class="mut" id="stage">กำลังโหลด…</span><span class="sp"></span>
 <span class="tabs"><button data-tab="auto">อัตโนมัติ</button> <button data-tab="premarket">ก่อนตลาดเปิด</button> <button data-tab="live">Live</button>
 <button data-tab="evening">ผลประเมินเย็น</button> <button data-tab="members" id="tab-members" hidden>สมาชิก<span id="pending"></span></button></span>
-<span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn logout">ออก</button></div>
+<span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn changepw">รหัสผ่าน</button><button class="btn logout">ออก</button></div>
 <iframe id="view" title="SR"></iframe><div id="members" hidden></div></section><script>
 window.SB = window.supabase.createClient(SR_CONFIG.url, SR_CONFIG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}});
 async function srDoc(key, col) {
@@ -48,8 +77,11 @@ const store = {get(k, d) { try { const v = localStorage.getItem(k); return v == 
                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }};
 const VIEW = {premarket: {doc: 'premarket'}, live: {src: 'live.html'}, live_done: {src: 'live.html'}, evening: {doc: 'evening'}};
 let TAB = store.get('sr_tab', 'auto'), STAGE = null, SHOWN = '', TIMER = null, ME = null;
+// a "set new password" link from the e-mail lands here with #...type=recovery (read before the client clears the address)
+let RECOVERY = /type=recovery/.test(location.hash), SETPW_BACK = null;
+const LINK_ERR = (() => { const h = new URLSearchParams(location.hash.slice(1)); return h.get('error_description') || h.get('error') || ''; })();
 
-function screen(id) { for (const s of ['login', 'wait', 'app']) $('#' + s).hidden = s !== id; }
+function screen(id) { for (const s of ['login', 'setpw', 'wait', 'app']) $('#' + s).hidden = s !== id; }
 
 async function show(stage) {
   const v = VIEW[stage] || VIEW.premarket, f = $('#view');
@@ -83,16 +115,71 @@ async function poll() {
 }
 function tick() { $('#clock').textContent = new Date().toLocaleTimeString('th-TH', {hour12: false, timeZone: 'Asia/Bangkok'}); }
 
-// ---------- sign in / register (one e-mail link for both; new e-mails become pending members)
-async function signIn(ev) {
+// ---------- sign in (e-mail + password) / register / forgot password / set new password
+const HERE = () => location.origin + location.pathname;
+const MIN_PW = 8;
+function thErr(e) {
+  const m = String(e?.message || e || '');
+  if (/invalid login credentials/i.test(m)) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง · ถ้ายังไม่เคยตั้งรหัสผ่าน (เคยเข้าด้วยลิงก์อีเมล) ให้กด "ลืมรหัสผ่าน / ยังไม่เคยตั้งรหัสผ่าน"';
+  if (/email not confirmed/i.test(m)) return 'ยังไม่ได้กดลิงก์ยืนยันในอีเมลที่ส่งไปตอนสมัคร (ดูในโฟลเดอร์ Spam ด้วย)';
+  if (/rate limit|security purposes|too many/i.test(m)) return 'ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
+  if (/already registered|already been registered/i.test(m)) return 'อีเมลนี้สมัครไว้แล้ว ให้ไปที่ "เข้าสู่ระบบ" หรือ "ลืมรหัสผ่าน"';
+  if (/should be different/i.test(m)) return 'รหัสผ่านใหม่ต้องไม่ซ้ำรหัสเดิม';
+  if (/password/i.test(m) && /least|short|weak/i.test(m)) return 'รหัสผ่านสั้นหรือง่ายเกินไป ใช้อย่างน้อย ' + MIN_PW + ' ตัวอักษร';
+  return m;
+}
+function say(id, text, ok) { const el = $(id); el.textContent = text; el.className = 'msg' + (ok ? ' ok' : ''); }
+function pwCheck(a, b, msgId) {
+  if (a.length < MIN_PW) { say(msgId, 'รหัสผ่านต้องมีอย่างน้อย ' + MIN_PW + ' ตัวอักษร'); return false; }
+  if (a !== b) { say(msgId, 'รหัสผ่านสองช่องไม่ตรงกัน'); return false; }
+  return true;
+}
+function mode(m) {
+  for (const k of ['login', 'register', 'forgot']) $('#f-' + k).hidden = k !== m;
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m || (m === 'forgot' && b.dataset.mode === 'login')));
+  const email = $('#f-' + m + ' input[type=email]'), from = [...document.querySelectorAll('.gate input[type=email]')].find(i => i.value);
+  if (email && from && !email.value) email.value = from.value;
+  store.set('sr_mode', m === 'forgot' ? 'login' : m);
+}
+async function doLogin(ev) {
+  ev.preventDefault(); say('#m-login', 'กำลังเข้าสู่ระบบ…', true);
+  const {error} = await SB.auth.signInWithPassword({email: $('#li-email').value.trim(), password: $('#li-pw').value});
+  if (error) say('#m-login', thErr(error)); else { say('#m-login', ''); $('#li-pw').value = ''; }
+}
+async function doRegister(ev) {
   ev.preventDefault();
-  const email = $('#email').value.trim(), full_name = $('#fullname').value.trim().slice(0, 100), note = $('#note').value.trim().slice(0, 300);
-  if (!$('#accept').checked) { $('#msg').textContent = 'กรุณายอมรับเงื่อนไขก่อน'; return; }
-  $('#msg').textContent = 'กำลังส่ง…';
-  const {error} = await SB.auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname,
-                                                                 shouldCreateUser: true, data: {full_name, note}}});
-  $('#msg').textContent = error ? 'ส่งไม่สำเร็จ: ' + error.message
-    : 'ส่งลิงก์ไปที่ ' + email + ' แล้ว เปิดอีเมลแล้วกดลิงก์ (ใช้เบราว์เซอร์เดียวกับหน้านี้) · ถ้าเป็นการสมัครครั้งแรก บัญชีจะรอผู้ดูแลอนุมัติก่อนเข้าใช้';
+  const email = $('#rg-email').value.trim(), full_name = $('#rg-name').value.trim().slice(0, 100), note = $('#rg-note').value.trim().slice(0, 300);
+  if (!full_name) { say('#m-register', 'กรุณาใส่ชื่อ'); return; }
+  if (!pwCheck($('#rg-pw').value, $('#rg-pw2').value, '#m-register')) return;
+  if (!$('#rg-accept').checked) { say('#m-register', 'กรุณาติ๊กยอมรับเงื่อนไขก่อน'); return; }
+  say('#m-register', 'กำลังสมัคร…', true);
+  const {data, error} = await SB.auth.signUp({email, password: $('#rg-pw').value, options: {emailRedirectTo: HERE(), data: {full_name, note}}});
+  if (error) { say('#m-register', thErr(error)); return; }
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {   // e-mail already has an account
+    say('#m-register', 'อีเมลนี้สมัครไว้แล้ว ให้ไปที่ "เข้าสู่ระบบ" ถ้าจำรหัสผ่านไม่ได้หรือยังไม่เคยตั้ง ให้กด "ลืมรหัสผ่าน / ยังไม่เคยตั้งรหัสผ่าน"'); return;
+  }
+  $('#rg-pw').value = $('#rg-pw2').value = '';
+  say('#m-register', data?.session ? 'สมัครแล้ว' : 'สมัครแล้ว ส่งอีเมลยืนยันไปที่ ' + email + ' กดลิงก์ในอีเมลหนึ่งครั้ง (ดูในโฟลเดอร์ Spam ด้วย) '
+      + 'จากนั้นบัญชีจะรอผู้ดูแลอนุมัติ ครั้งต่อไปเข้าด้วยอีเมลและรหัสผ่านที่ "เข้าสู่ระบบ"', true);
+}
+async function doForgot(ev) {
+  ev.preventDefault(); say('#m-forgot', 'กำลังส่ง…', true);
+  const email = $('#fg-email').value.trim();
+  const {error} = await SB.auth.resetPasswordForEmail(email, {redirectTo: HERE()});
+  say('#m-forgot', error ? thErr(error) : 'ถ้า ' + email + ' เป็นสมาชิก จะได้อีเมลลิงก์ตั้งรหัสผ่าน กดลิงก์แล้วตั้งรหัสผ่านใหม่ในหน้านี้ (ดูในโฟลเดอร์ Spam ด้วย)', !error);
+}
+function openSetPw(back) { SETPW_BACK = back; RECOVERY = false; $('#sp-pw').value = $('#sp-pw2').value = ''; say('#m-setpw', ''); screen('setpw');
+  $('#sp-title').textContent = back ? 'เปลี่ยนรหัสผ่าน' : 'ตั้งรหัสผ่านใหม่'; $('#sp-cancel').hidden = !back; }
+async function doSetPw(ev) {
+  ev.preventDefault();
+  if (!pwCheck($('#sp-pw').value, $('#sp-pw2').value, '#m-setpw')) return;
+  say('#m-setpw', 'กำลังบันทึก…', true);
+  const {error} = await SB.auth.updateUser({password: $('#sp-pw').value});
+  if (error) { say('#m-setpw', thErr(error)); return; }
+  $('#sp-pw').value = $('#sp-pw2').value = ''; RECOVERY = false;
+  say('#m-setpw', 'บันทึกรหัสผ่านแล้ว ครั้งต่อไปเข้าด้วยอีเมลและรหัสผ่านนี้', true);
+  if (location.hash) history.replaceState(null, '', HERE());
+  setTimeout(() => { SETPW_BACK = null; render(); }, 1500);
 }
 async function myMember(uid) {
   for (let i = 0; i < 3; i++) {                     // the member row is created by a database trigger right after sign-up
@@ -103,7 +190,9 @@ async function myMember(uid) {
   return null;
 }
 async function render() {
+  if (!$('#setpw').hidden && SETPW_BACK !== null) return;            // stay on the password screen until saved
   const {data: {session}} = await SB.auth.getSession();
+  if (session && RECOVERY) { openSetPw(null); SETPW_BACK = ''; return; }
   if (!session) { clearInterval(TIMER); TIMER = null; ME = null; screen('login'); return; }
   ME = await myMember(session.user.id);
   if (!ME || ME.status !== 'approved') {
@@ -146,10 +235,19 @@ async function showMembers() {
   });
 }
 
-$('#loginform').addEventListener('submit', signIn);
+$('#f-login').addEventListener('submit', doLogin);
+$('#f-register').addEventListener('submit', doRegister);
+$('#f-forgot').addEventListener('submit', doForgot);
+$('#f-setpw').addEventListener('submit', doSetPw);
+$('#sp-cancel').addEventListener('click', () => { SETPW_BACK = null; render(); });
+document.querySelectorAll('.changepw').forEach(b => b.addEventListener('click', () => openSetPw('back')));
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => mode(b.dataset.mode)));
+document.querySelectorAll('[data-goto]').forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); mode(a.dataset.goto); }));
 $('#recheck').addEventListener('click', () => render());
-document.querySelectorAll('.logout').forEach(b => b.addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; render(); }));
+document.querySelectorAll('.logout').forEach(b => b.addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; SETPW_BACK = null; RECOVERY = false; mode('login'); render(); }));
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => pick(b.dataset.tab));
-SB.auth.onAuthStateChange(() => setTimeout(render, 0));
+SB.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') RECOVERY = true; setTimeout(render, 0); });
+mode(store.get('sr_mode', 'login'));
+if (LINK_ERR) { mode('forgot'); say('#m-forgot', 'ลิงก์ในอีเมลใช้ไม่ได้หรือหมดอายุแล้ว (' + LINK_ERR.replace(/\+/g, ' ') + ') ขอลิงก์ใหม่ได้ที่นี่'); history.replaceState(null, '', HERE()); }
 render(); tick(); setInterval(tick, 1000);
 </script></body></html>
