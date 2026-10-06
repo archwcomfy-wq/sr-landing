@@ -12,19 +12,28 @@ td.l,th.l{text-align:left}td.l{white-space:normal;min-width:110px}.th{display:bl
 .ok{background:var(--pos);color:#fff}.big{font-size:22px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 a{color:var(--acc)}ul{padding-left:18px;margin:4px 0}li{margin:3px 0}
 
-html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;flex-direction:column;flex:1;min-height:0}#app[hidden],#login[hidden]{display:none}
+html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;flex-direction:column;flex:1;min-height:0}[hidden]{display:none!important}
 .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--card)}
 .bar b{font-size:16px}.tabs button,.btn{font:inherit;font-size:13.5px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--fg);cursor:pointer}
 .tabs button.on,.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.dot{width:9px;height:9px;border-radius:50%;background:#bbb;display:inline-block}
-.dot.on{background:var(--pos)}#view{flex:1;width:100%;border:0;background:var(--bg)}.sp{flex:1}
-#login{max-width:420px;margin:12vh auto;padding:0 16px}#login input{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);margin:8px 0}
-</style></head><body><section id="login" hidden><div class="card"><h1>SR ห้องติดตาม</h1><div class="mut">เข้าระบบด้วยลิงก์ทางอีเมล (เฉพาะเจ้าของ)</div>
-<form id="loginform"><input id="email" type="email" required autocomplete="email"><button class="btn pri" type="submit">ส่งลิงก์เข้าระบบ</button></form>
-<div class="mut" id="msg"></div></div><div class="mut">งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></section>
+.dot.on{background:var(--pos)}#view{flex:1;width:100%;border:0;background:var(--bg)}.sp{flex:1}#members{flex:1;overflow:auto;padding:0 16px 30px;max-width:1100px}
+.gate{max-width:440px;margin:9vh auto;padding:0 16px}.gate input,.gate textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);margin:4px 0 8px}
+.gate label{font-size:13px;color:var(--mut)}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
+</style></head><body><section id="login" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1>
+<div class="mut">เข้าสู่ระบบหรือสมัครสมาชิกด้วยลิงก์ทางอีเมล · สมาชิกใหม่ต้องรอผู้ดูแลอนุมัติก่อนเข้าใช้</div>
+<form id="loginform"><label>อีเมล</label><input id="email" type="email" required autocomplete="email">
+<label>ชื่อที่ให้ผู้ดูแลเห็น (สำหรับสมัครครั้งแรก)</label><input id="fullname" maxlength="100" autocomplete="name">
+<label>เหตุผลที่ขอเข้าใช้ (ไม่บังคับ)</label><textarea id="note" rows="2" maxlength="300"></textarea>
+<div class="chk"><input id="accept" type="checkbox"><span>รับทราบว่าข้อมูลในเว็บนี้เป็นงานวิจัยเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน และจะไม่นำไปเผยแพร่ต่อ</span></div>
+<button class="btn pri" type="submit">ส่งลิงก์เข้าระบบ / สมัคร</button></form>
+<div class="mut" id="msg" style="margin-top:8px"></div></div></section>
+<section id="wait" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1><div id="waitmsg"></div>
+<div style="margin-top:10px"><button class="btn pri" id="recheck">ตรวจสถานะอีกครั้ง</button> <button class="btn logout">ออกจากระบบ</button></div></div></section>
 <section id="app" hidden><div class="bar"><b>SR ห้องติดตาม</b><span class="dot" id="dot"></span><span class="mut" id="stage">กำลังโหลด…</span><span class="sp"></span>
 <span class="tabs"><button data-tab="auto">อัตโนมัติ</button> <button data-tab="premarket">ก่อนตลาดเปิด</button> <button data-tab="live">Live</button>
-<button data-tab="evening">ผลประเมินเย็น</button></span><span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn" id="logout">ออก</button></div>
-<iframe id="view" title="SR"></iframe></section><script>
+<button data-tab="evening">ผลประเมินเย็น</button> <button data-tab="members" id="tab-members" hidden>สมาชิก<span id="pending"></span></button></span>
+<span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn logout">ออก</button></div>
+<iframe id="view" title="SR"></iframe><div id="members" hidden></div></section><script>
 window.SB = window.supabase.createClient(SR_CONFIG.url, SR_CONFIG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}});
 async function srDoc(key, col) {
   const {data, error} = await SB.from('sr_docs').select(col + ',updated_at').eq('key', key).maybeSingle();
@@ -38,10 +47,13 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const store = {get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }};
 const VIEW = {premarket: {doc: 'premarket'}, live: {src: 'live.html'}, live_done: {src: 'live.html'}, evening: {doc: 'evening'}};
-let TAB = store.get('sr_tab', 'auto'), STAGE = null, SHOWN = '', TIMER = null;
+let TAB = store.get('sr_tab', 'auto'), STAGE = null, SHOWN = '', TIMER = null, ME = null;
+
+function screen(id) { for (const s of ['login', 'wait', 'app']) $('#' + s).hidden = s !== id; }
 
 async function show(stage) {
   const v = VIEW[stage] || VIEW.premarket, f = $('#view');
+  $('#members').hidden = true; f.hidden = false;
   if (v.src) { if (SHOWN !== v.src) { SHOWN = v.src; f.removeAttribute('srcdoc'); f.src = v.src; } return; }
   try {
     const d = await srDoc(v.doc, 'html'), tag = v.doc + d.updated_at;
@@ -56,9 +68,10 @@ async function show(stage) {
 function pick(tab) {
   TAB = tab; store.set('sr_tab', tab);
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (tab === 'members') { showMembers(); return; }
   apply();
 }
-function apply() { show(TAB === 'auto' ? (STAGE?.stage || 'premarket') : TAB); }
+function apply() { if (TAB !== 'members') show(TAB === 'auto' ? (STAGE?.stage || 'premarket') : TAB); }
 async function poll() {
   try {
     const d = await srDoc('landing', 'data'), j = d.data;
@@ -66,27 +79,77 @@ async function poll() {
     $('#dot').className = 'dot on';
   } catch (e) { $('#dot').className = 'dot'; $('#stage').textContent = 'ยังไม่มีข้อมูลจากเครื่อง หรือเชื่อมต่อไม่ได้'; }
   apply();
+  if (ME?.role === 'admin') countPending();
 }
 function tick() { $('#clock').textContent = new Date().toLocaleTimeString('th-TH', {hour12: false, timeZone: 'Asia/Bangkok'}); }
 
+// ---------- sign in / register (one e-mail link for both; new e-mails become pending members)
 async function signIn(ev) {
   ev.preventDefault();
-  const email = $('#email').value.trim();
+  const email = $('#email').value.trim(), full_name = $('#fullname').value.trim().slice(0, 100), note = $('#note').value.trim().slice(0, 300);
+  if (!$('#accept').checked) { $('#msg').textContent = 'กรุณายอมรับเงื่อนไขก่อน'; return; }
   $('#msg').textContent = 'กำลังส่ง…';
-  const {error} = await SB.auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname}});
-  $('#msg').textContent = error ? 'ส่งไม่สำเร็จ: ' + error.message : 'ส่งลิงก์เข้าระบบไปที่ ' + email + ' แล้ว เปิดอีเมลแล้วกดลิงก์ (ใช้เบราว์เซอร์เดียวกับหน้านี้)';
+  const {error} = await SB.auth.signInWithOtp({email, options: {emailRedirectTo: location.origin + location.pathname,
+                                                                 shouldCreateUser: true, data: {full_name, note}}});
+  $('#msg').textContent = error ? 'ส่งไม่สำเร็จ: ' + error.message
+    : 'ส่งลิงก์ไปที่ ' + email + ' แล้ว เปิดอีเมลแล้วกดลิงก์ (ใช้เบราว์เซอร์เดียวกับหน้านี้) · ถ้าเป็นการสมัครครั้งแรก บัญชีจะรอผู้ดูแลอนุมัติก่อนเข้าใช้';
+}
+async function myMember(uid) {
+  for (let i = 0; i < 3; i++) {                     // the member row is created by a database trigger right after sign-up
+    const {data} = await SB.from('members').select('status,role,full_name,email').eq('user_id', uid).maybeSingle();
+    if (data) return data;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return null;
 }
 async function render() {
   const {data: {session}} = await SB.auth.getSession();
-  $('#login').hidden = !!session; $('#app').hidden = !session;
-  if (!session) { clearInterval(TIMER); TIMER = null; return; }
+  if (!session) { clearInterval(TIMER); TIMER = null; ME = null; screen('login'); return; }
+  ME = await myMember(session.user.id);
+  if (!ME || ME.status !== 'approved') {
+    clearInterval(TIMER); TIMER = null; screen('wait');
+    $('#waitmsg').innerHTML = ME?.status === 'rejected'
+      ? `บัญชี <b>${esc(session.user.email)}</b> ไม่ได้รับอนุมัติให้เข้าใช้งาน`
+      : `ลงทะเบียนแล้ว: <b>${esc(session.user.email)}</b><br>รอผู้ดูแลอนุมัติสิทธิ์ เมื่ออนุมัติแล้วกลับมาเปิดหน้านี้หรือกด "ตรวจสถานะอีกครั้ง"`;
+    return;
+  }
+  screen('app');
   $('#who').textContent = session.user.email;
-  if (!TIMER) { pick(TAB); poll(); TIMER = setInterval(poll, 10000); }
+  $('#tab-members').hidden = ME.role !== 'admin';
+  if (!TIMER) { pick(TAB === 'members' && ME.role !== 'admin' ? 'auto' : TAB); poll(); TIMER = setInterval(poll, 10000); }
 }
-$('#email').value = SR_CONFIG.owner;
+
+// ---------- owner: approve / reject members
+async function countPending() {
+  const {count} = await SB.from('members').select('user_id', {count: 'exact', head: true}).eq('status', 'pending');
+  $('#pending').textContent = count ? ` (${count})` : '';
+}
+async function showMembers() {
+  $('#view').hidden = true; const box = $('#members'); box.hidden = false;
+  box.innerHTML = '<div class="mut">กำลังโหลด…</div>';
+  const {data, error} = await SB.from('members').select('user_id,email,full_name,note,status,role,created_at,decided_at')
+                                .order('status', {ascending: true}).order('created_at', {ascending: false});
+  if (error) { box.innerHTML = '<div class="mut">โหลดรายชื่อไม่ได้: ' + esc(error.message) + '</div>'; return; }
+  const th = {pending: 'รออนุมัติ', approved: 'อนุมัติแล้ว', rejected: 'ไม่อนุมัติ'};
+  box.innerHTML = `<h2>สมาชิก</h2><div class="card wrap"><table><tr><th class="l">อีเมล</th><th class="l">ชื่อ</th><th class="l">เหตุผลที่สมัคร</th>
+    <th>สมัครเมื่อ</th><th>สถานะ</th><th></th></tr>` + data.map(m => `<tr><td class="l">${esc(m.email)}</td><td class="l">${esc(m.full_name)}</td>
+    <td class="l">${esc(m.note)}</td><td>${esc(String(m.created_at).slice(0, 16).replace('T', ' '))}</td><td>${th[m.status] || esc(m.status)}${m.role === 'admin' ? ' (ผู้ดูแล)' : ''}</td>
+    <td>${m.role === 'admin' ? '' : (m.status !== 'approved' ? `<button class="btn pri" data-id="${m.user_id}" data-s="approved">อนุมัติ</button> ` : '')
+      + (m.status !== 'rejected' ? `<button class="btn" data-id="${m.user_id}" data-s="rejected">${m.status === 'approved' ? 'ถอนสิทธิ์' : 'ไม่อนุมัติ'}</button>` : '')}</td></tr>`).join('')
+    + '</table></div><div class="mut">สมาชิกที่อนุมัติแล้วเห็นข้อมูลทุกหน้าเหมือนคุณ · ถอนสิทธิ์ได้ทุกเมื่อ · ผู้ใช้ที่สมัครเองจะอยู่ในสถานะ "รออนุมัติ" จนกว่าคุณกด</div>';
+  box.querySelectorAll('button[data-id]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    const {error} = await SB.from('members').update({status: b.dataset.s, decided_at: new Date().toISOString(), decided_by: ME.email})
+                            .eq('user_id', b.dataset.id);
+    if (error) alert('บันทึกไม่ได้: ' + error.message);
+    showMembers(); countPending();
+  });
+}
+
 $('#loginform').addEventListener('submit', signIn);
-$('#logout').addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; render(); });
+$('#recheck').addEventListener('click', () => render());
+document.querySelectorAll('.logout').forEach(b => b.addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; render(); }));
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => pick(b.dataset.tab));
-SB.auth.onAuthStateChange(() => render());
+SB.auth.onAuthStateChange(() => setTimeout(render, 0));
 render(); tick(); setInterval(tick, 1000);
 </script></body></html>
