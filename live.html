@@ -29,7 +29,11 @@ a{color:var(--acc)}ul{padding-left:18px;margin:4px 0}li{margin:3px 0}
 .chart{width:100%;height:260px}.ch-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.ta{margin:4px 0;font-size:12.5px}
 .mini{font-size:12px;padding:1px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer}
 .ivbar button{font-size:13px;padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer}
-.ivbar button.on{background:var(--acc);color:#fff;border-color:var(--acc)}.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.ivbar button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.provisional{border:2px dashed #d4a017;background:var(--warnbg)}.warnbar{background:#f2c230;color:#3a2c00;font-weight:700;padding:6px 10px;border-radius:6px;margin:-2px 0 6px}
+.warnnote{color:var(--warnfg);font-size:13px;margin-bottom:6px}.official{border:2px solid var(--pos)}.okbar{background:var(--pos);color:#fff;font-weight:700;padding:6px 10px;border-radius:6px;margin:-2px 0 4px}
+.checks{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;margin:4px 0 6px}.ck.y{color:var(--pos)}.ck.n{color:var(--warnfg)}
+:root{--warnbg:#fff8e1;--warnfg:#8a6100}@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--warnbg:#2e2711;--warnfg:#f2c230}}:root[data-theme=dark]{--warnbg:#2e2711;--warnfg:#f2c230}.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
 </style></head><body><main><h1>Live กลุ่มนำ · <span id="clock">–</span></h1>
 <div class="mut" id="feed">กำลังโหลด…</div>
 <div class="card"><b>ยืนยันแล้ว:</b> <span id="alerts"></span></div>
@@ -64,12 +68,14 @@ function quoteOf(sym) {
   return null;
 }
 function planLevels(sym) {
-  for (const p of (SNAP?.plans || [])) for (const x of p.picks) if (x.symbol === sym && x.pick) return x;
+  for (const p of (SNAP?.plans || [])) if (p.kind !== 'ato') for (const x of p.picks) if (x.symbol === sym && x.pick) return x;
+  for (const x of (SNAP?.provisional?.picks || [])) if (x.symbol === sym && x.pick) return x;
   return null;
 }
 function watched() {
   const picks = [];
   for (const p of (SNAP?.plans || []).slice().reverse()) if (p.kind !== 'ato') for (const x of p.picks) if (x.pick) picks.push(x.symbol);
+  if (!picks.length) for (const x of (SNAP?.provisional?.picks || [])) if (x.pick) picks.push(x.symbol);
   return [...new Set([...picks, ...EXTRA])].slice(0, 12);
 }
 function addExtra(sym) {
@@ -203,7 +209,11 @@ function planHtml() {
         <td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
     }).join('');
     const top = (p.now_detail || []).filter(d => !p.picks.some(x => x.pick && x.symbol === d.symbol));
-    out.push(`<div class="card" style="border:2px solid var(--acc)"><b>รายการคัดกลุ่มนำ ${esc(p.code)}</b> <span class="mut">ตั้งเมื่อ ${esc(p.created)} · เรียงจากดีที่สุด · คุณเลือกเอง</span>
+    const how = p.confirm === 'early' ? 'ประกาศก่อนเวลา' : p.confirm === 'new_leader' ? 'แผนกลุ่มนำใหม่' : p.confirm === 'scheduled' ? 'ประกาศตามเวลา' : '';
+    const chk = p.check_1005 ? (p.check_1005.same ? ` · ตรวจซ้ำ ${esc(p.check_1005.hm)}: กลุ่มนำยังเป็น ${esc(p.code)}` : ` · ตรวจซ้ำ ${esc(p.check_1005.hm)}: กลุ่มนำเปลี่ยนเป็น ${esc(p.check_1005.code || 'ไม่มีกลุ่มยืนยัน')}`) : '';
+    out.push(`<div class="card official"><div class="okbar">✓ ยืนยันแล้ว · แผนทางการ ${esc(p.code)} · ประกาศ ${esc(p.created_at || p.created)}${how ? ' (' + how + ')' : ''}</div>
+      <div class="mut" style="margin:4px 0">${esc(p.confirm_note || '')}${p.provisional_since ? ' · ขึ้นเป็นกลุ่มนำชั่วคราวตั้งแต่ ' + esc(p.provisional_since) : ''}${chk} · ตัวเลขในแผนนี้คงที่ ไม่เปลี่ยนตามอันดับอีก</div>
+      <b>รายการคัดกลุ่มนำ ${esc(p.code)}</b> <span class="mut">ตั้งเมื่อ ${esc(p.created_at || p.created)} · เรียงจากดีที่สุด · คุณเลือกเอง</span>
       <div class="wrap"><table><tr><th>อันดับ</th><th class="l">หุ้น</th><th>ราคาตลาดตอนตั้งแผน<span class="th">(% เทียบปิดวานนี้)</span></th>
       <th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th><th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาตอนตั้งแผน ${p.bid_ticks} ช่อง</span></th>
       <th>ราคาเป้าขาย<span class="th">bid +${(p.take_profit * 100).toFixed(1)}%</span></th>
@@ -212,7 +222,31 @@ function planHtml() {
       ${top.length ? `<div style="margin-top:6px"><b>ถ้าคัดใหม่ตอนนี้ (${esc(p.now_hm || '')}) จะมีเพิ่ม:</b> ${top.map(d => `<a href="#" onclick="addExtra('${d.symbol}');return false"><b>${esc(d.symbol)}</b></a>${d.source === 'reserve' ? ' (สำรอง)' : d.source === 'other_group' ? ' (' + esc(d.code) + ')' : ''} #${d.rank} ${pct(d.chg)} bid ${num(d.bid)} เป้า ${num(d.tp)}`).join(' · ')}</div>` : ''}
       <div class="mut">bid ต่ำกว่าราคาตอนตั้ง ${p.bid_ticks} ช่อง · ยกเลิกถ้าไม่ได้ของภายใน ${esc(p.cancel_after)} · ไม่ถึงเป้าขายตอนปิด · ${stats ? '*ทดสอบย้อนหลัง 55 วัน ตามอันดับ (โอกาสถึงเป้าเมื่อได้ของ) ·' : 'ลำดับ 1–5 เรียงจากคะแนนแผน · ยังไม่แสดงเปอร์เซ็นต์โอกาสถึงเป้า จนกว่าจะมีผลทดสอบของกฎคัดปัจจุบัน ·'} สำรอง = กลุ่มนำ บวกแต่ซื้อขายเบา ยังไม่มีสถิติทดสอบ · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`);
   }
-  return out.join('') || '<div class="card mut">แผนจะขึ้นเมื่อถึง 10:05 และมีกลุ่มที่ยืนยันแล้ว</div>';
+  const pv = provisionalHtml();
+  return pv + out.join('') || (pv ? '' : '<div class="card mut">แผนชั่วคราวจะขึ้นเมื่อมีราคา · แผนทางการขึ้นเมื่อผ่านเกณฑ์ประกาศเร็ว หรือถึง 10:05 และมีกลุ่มที่ยืนยันแล้ว</div>');
+}
+function provisionalHtml() {
+  const p = SNAP.provisional;
+  if (!p) return '';
+  const st = p.status || {}, ck = st.checks || [];
+  const head = `<div class="warnbar">⚠ ยังไม่ยืนยัน · แผนชั่วคราว (ไม่เป็นทางการ)${p.code ? ' · กลุ่มนำชั่วคราว: <b>' + esc(p.code) + '</b>' : ''}${p.projected ? ' · ราคาคาดการณ์ก่อนเปิด' : ''}</div>`;
+  const note = `<div class="warnnote">กลุ่มและหุ้นในตารางนี้เปลี่ยนได้ทุก ${REFRESH / 1000} วินาทีตามอันดับล่าสุด ราคา bid และราคาเป้าขายคิดจากราคาล่าสุดด้วยกฎเดียวกับแผนทางการ ·
+    ${p.confirmed_group ? 'กลุ่มนี้ผ่านเกณฑ์ยืนยันเดิมแล้ว รอเกณฑ์ประกาศเร็วหรือเวลา ' + esc(st.scheduled || '10:05') : 'กลุ่มนี้ยังไม่ผ่านเกณฑ์ยืนยัน (แสดงอันดับ 1 ขณะนี้)'} ·
+    ถ้าจะซื้อก่อนยืนยันเป็นการตัดสินใจของคุณเอง</div>`;
+  const checks = `<div class="checks">` + ck.map(c => `<span class="ck ${c.ok ? 'y' : 'n'}">${c.ok ? '✓' : '✗'} ${esc(c.label)} <span class="mut">(${esc(c.detail)})</span></span>`).join('') +
+    `<span class="ck">${st.enabled === false ? 'ปิดการประกาศเร็วไว้ (config)' : 'ครบทุกข้อ = ประกาศแผนทางการทันที'} · ไม่ครบ = ประกาศตามเวลา ${esc(st.scheduled || '10:05')} ด้วยเกณฑ์เดิม</span></div>`;
+  if (p.error) return `<div class="card provisional">${head}${checks}<div class="mut">คำนวณแผนชั่วคราวไม่ได้: ${esc(p.error)}</div></div>`;
+  const rows = (p.picks || []).filter(x => x.pick).map(x => {
+    const q = quoteOf(x.symbol);
+    return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
+      <td>${num(q?.last ?? x.last)} <span class="mut">(${pct(q?.chg ?? x.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
+      <td>${pct(x.from_low)}</td><td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
+  }).join('');
+  return `<div class="card provisional">${head}${note}${checks}
+    <div class="wrap"><table><tr><th>อันดับ<span class="th">ชั่วคราว</span></th><th class="l">หุ้น</th><th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th>
+    <th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาล่าสุด ${p.bid_ticks} ช่อง</span></th><th>ราคาเป้าขาย<span class="th">bid +${(p.take_profit * 100).toFixed(1)}%</span></th>
+    <th>จากราคาต่ำสุด<span class="th">วันนี้</span></th><th></th></tr>${rows}</table></div>
+    <div class="mut">คำนวณเมื่อ ${esc(p.time)} · ${st.cand ? 'ผู้นำเดียวกันตั้งแต่ ' + esc(st.since) : 'ผู้นำยังไม่ผ่านเกณฑ์ยืนยัน'} · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`;
 }
 function groupsHtml() {
   const g = SNAP.groups;
@@ -234,7 +268,7 @@ async function loadSnap() {
     SNAP = await SRD.get('live_latest');
     $('#clock').textContent = SNAP.time.slice(11);
     const f = SNAP.feed;
-    $('#feed').innerHTML = `${esc(SNAP.source)} · ราคาครบ ${SNAP.n_quotes}/${SNAP.n_stocks}` + (f ? ` · เรียลไทม์ ${f.realtime} ตัว ที่เหลือทุก ~${f.rest_cycle_s ?? '–'} วิ` : '');
+    $('#feed').innerHTML = `${esc(SNAP.source)} · ${SNAP.market_open ? 'ตลาดเปิด ' + esc(SNAP.open_time || '') : '<b>ก่อนเปิด (ราคาคาดการณ์)</b>'} · ราคาครบ ${SNAP.n_quotes}/${SNAP.n_stocks}` + (f ? ` · เรียลไทม์ ${f.realtime} ตัว ที่เหลือทุก ~${f.rest_cycle_s ?? '–'} วิ` : '');
     $('#alerts').innerHTML = (SNAP.alerts || []).map(a => `<span class="chip ok">${esc(a)}</span>`).join(' ') || '<span class="mut">ยังไม่มีกลุ่มยืนยัน</span>';
     $('#plan').innerHTML = planHtml();
     $('#groups').innerHTML = groupsHtml();
