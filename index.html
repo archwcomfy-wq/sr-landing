@@ -22,13 +22,21 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:10px 0 6px}.seg button{flex:1;font:inherit;font-size:14px;padding:8px;border:0;background:var(--card);color:var(--fg);cursor:pointer}
 .seg button.on{background:var(--acc);color:#fff}.btn.wide{padding:7px 18px;font-size:14px}.links{font-size:13px;margin-top:10px}.links a{color:var(--acc)}
 .main{display:flex;flex:1;min-height:0}.pane{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0}#cview{flex:1;width:100%;border:0;background:var(--bg)}
-.side{width:200px;flex:none;border-right:1px solid var(--line);background:var(--card);padding:12px 10px;overflow:auto;display:flex;flex-direction:column;gap:6px}
-.side h3{font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--mut);margin:0 4px 2px}.side .hint{font-size:11.5px;color:var(--mut);margin:2px 4px 8px;line-height:1.45}
-.side button{font:inherit;text-align:left;font-size:13.5px;line-height:1.35;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);cursor:pointer}
-.side button small{display:block;font-size:11px;color:var(--mut);margin-top:2px}.side button.on{background:var(--acc);border-color:var(--acc);color:#fff}.side button.on small{color:#fff;opacity:.85}
-.side .back{margin-top:auto;font-size:12px;color:var(--mut);padding:6px 4px}
-@media (max-width:760px){.main{flex-direction:column}.side{width:auto;flex-direction:row;align-items:stretch;border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;overflow-x:auto}
-.side h3,.side .hint,.side .back{display:none}.side button{flex:1 1 0;min-width:0;padding:6px 10px;font-size:13px}}
+:root{--lt:#a85500;--lt-on:#fff;--lt-bg:#fff3df;--lt-line:#efbd72;--lt-ink:#4f2c00}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--lt:#f2a53c;--lt-on:#241500;--lt-bg:#33240f;--lt-line:#7d5622;--lt-ink:#ffdcaa}}
+:root[data-theme=dark]{--lt:#f2a53c;--lt-on:#241500;--lt-bg:#33240f;--lt-line:#7d5622;--lt-ink:#ffdcaa}
+.side{width:232px;flex:none;border-right:3px solid var(--lt);background:var(--lt-bg);padding:12px 10px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.side-head{background:var(--lt);color:var(--lt-on);border-radius:10px;padding:10px 11px 11px;line-height:1.35}
+.side-head b{display:flex;gap:8px;align-items:center;font-size:15.5px;line-height:1.3}.side-head b i{font-style:normal;font-size:20px}.side-head u{text-decoration:none}.side-head em{display:none}
+.side-head span{display:block;font-size:12px;margin-top:5px;opacity:.95}
+.side button{font:inherit;text-align:left;font-size:13.5px;line-height:1.35;padding:8px 10px;border:1px solid var(--lt-line);border-radius:10px;background:var(--card);color:var(--fg);cursor:pointer}
+.side button small{display:block;font-size:11px;color:var(--mut);margin-top:2px}.side button.on{background:var(--lt);border-color:var(--lt);color:var(--lt-on);font-weight:600}.side button.on small{color:var(--lt-on);opacity:.9;font-weight:400}
+.side .back{margin-top:auto;font-size:12px;color:var(--lt-ink);padding:6px 4px}
+#cbanner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:var(--lt-bg);border-bottom:2px solid var(--lt);color:var(--lt-ink);font-size:13.5px}
+#cbanner b{color:var(--lt)}#cbanner .sp{flex:1}#cbanner button{font:inherit;font-size:13px;padding:4px 12px;border:1px solid var(--acc);border-radius:999px;background:var(--card);color:var(--acc);cursor:pointer}
+@media (max-width:760px){.main{flex-direction:column}.side{width:auto;flex-direction:row;flex-wrap:wrap;align-items:stretch;border-right:0;border-bottom:3px solid var(--lt);padding:8px 10px}
+.side-head{flex:1 0 100%;padding:6px 10px}.side-head b{font-size:14px;display:inline-flex}.side-head b i{font-size:16px}.side-head br{display:none}.side-head em{display:inline;font-style:normal}.side-head span{display:inline;margin:0 0 0 6px;font-size:11.5px}.side .back{display:none}
+.side button{flex:1 1 0;min-width:0;padding:6px 10px;font-size:13px}#cbanner{padding:6px 10px;font-size:12.5px}#cbanner>span:not(.sp){display:none}}
 .msg{font-size:13.5px;margin-top:10px;color:var(--neg,#c0392b)}.msg.ok{color:var(--mut)}.msg:empty{display:none}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
 </style></head><body><section id="login" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1>
 <div class="seg"><button type="button" data-mode="login">เข้าสู่ระบบ</button><button type="button" data-mode="register">สมัครสมาชิกใหม่</button></div>
@@ -70,12 +78,13 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 <span class="tabs"><button data-tab="auto">อัตโนมัติ</button> <button data-tab="premarket">ก่อนตลาดเปิด</button> <button data-tab="live">Live</button>
 <button data-tab="evening">ผลประเมินเย็น</button> <button data-tab="members" id="tab-members" hidden>สมาชิก<span id="pending"></span></button></span>
 <span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn changepw">รหัสผ่าน</button><button class="btn logout">ออก</button></div>
-<div class="main"><aside class="side" aria-label="กลยุทธ์ถือยาว"><h3>กลยุทธ์ถือยาว · จุดต่ำรอบ</h3>
-<div class="hint">คนละกลยุทธ์กับ Live เทรดรายวันด้านบน · อัปเดตหลังปิดตลาด</div>
+<div class="main"><aside class="side" aria-label="กลยุทธ์ถือยาว">
+<div class="side-head" role="note"><b><i aria-hidden="true">⚠</i><u>กลยุทธ์ถือยาว<br><em> · </em>จุดต่ำรอบ</u></b><span>ไม่ใช่สัญญาณเทรดรายวัน · คนละกลยุทธ์กับ Live ด้านบน</span></div>
 <button type="button" data-side="cycle_fin">จุดต่ำรอบ: แบงก์–นอนแบงก์<small></small></button>
 <button type="button" data-side="cycle_sr">จุดต่ำรอบ: SR 27 กลุ่ม + นอกกลุ่ม<small></small></button>
-<div class="back">กดแท็บด้านบนเพื่อกลับไปหน้า Live</div></aside>
-<div class="pane"><iframe id="view" title="SR"></iframe><iframe id="cview" title="จุดต่ำรอบ" hidden></iframe><div id="members" hidden></div></div></div></section><script>
+<div class="back">อัปเดตอัตโนมัติทุกเช้าวันทำการก่อนตลาดเปิด · กดแท็บด้านบนเพื่อกลับไปหน้า Live</div></aside>
+<div class="pane"><div id="cbanner" hidden><b>⚠ กำลังดูกลยุทธ์ถือยาว (รอซื้อที่จุดต่ำของรอบ)</b><span>ราคา ณ ปิดตลาดวันทำการก่อนหน้า ไม่ใช่ราคาเรียลไทม์ ไม่ใช้กับการเทรดรายวัน</span><span class="sp"></span><button type="button" id="cback">← กลับไปหน้า Live</button></div>
+<iframe id="view" title="SR"></iframe><iframe id="cview" title="จุดต่ำรอบ" hidden></iframe><div id="members" hidden></div></div></div></section><script>
 window.SB = window.supabase.createClient(SR_CONFIG.url, SR_CONFIG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}});
 async function srDoc(key, col) {
   const {data, error} = await SB.from('sr_docs').select(col + ',updated_at').eq('key', key).maybeSingle();
@@ -115,7 +124,7 @@ async function show(stage) {
 }
 function pick(tab) {
   TAB = tab; store.set('sr_tab', tab);
-  SIDE = null; $('#cview').hidden = true;
+  SIDE = null; $('#cview').hidden = true; $('#cbanner').hidden = true;
   document.querySelectorAll('[data-side]').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (tab === 'members') { showMembers(); return; }
@@ -126,14 +135,14 @@ const NOSIDE = '<p style="font:15px system-ui;padding:20px;color:#777">ยัง
 const CDOC = {};                                     // key -> {at, html}: switching between the two pages needs no re-download
 function stamp(key, at) {
   const el = document.querySelector(`[data-side="${key}"] small`); if (!el || !at) return;
-  el.textContent = 'ส่งขึ้น ' + new Date(at).toLocaleString('th-TH', {timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+  el.textContent = 'อัปเดต ' + new Date(at).toLocaleString('th-TH', {timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
 }
 async function side(key) {
   SIDE = key;
   document.querySelectorAll('[data-side]').forEach(b => b.classList.toggle('on', b.dataset.side === key));
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('on'));
   $('#view').hidden = true; $('#members').hidden = true;
-  const f = $('#cview'); f.hidden = false;
+  const f = $('#cview'); f.hidden = false; $('#cbanner').hidden = false;
   try {
     const {data: m, error} = await SB.from('sr_docs').select('updated_at').eq('key', key).maybeSingle();
     if (error) throw error;
@@ -301,6 +310,7 @@ $('#recheck').addEventListener('click', () => render());
 document.querySelectorAll('.logout').forEach(b => b.addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; SIDE = null; CSHOWN = ''; for (const k in CDOC) delete CDOC[k]; SETPW_BACK = null; RECOVERY = false; mode('login'); render(); }));
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => pick(b.dataset.tab));
 document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => side(b.dataset.side));
+$('#cback').onclick = () => pick(TAB === 'members' ? 'auto' : TAB);
 SB.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') RECOVERY = true; setTimeout(render, 0); });
 mode(store.get('sr_mode', 'login'));
 if (LINK_ERR) { mode('forgot'); say('#m-forgot', 'ลิงก์ในอีเมลใช้ไม่ได้หรือหมดอายุแล้ว (' + LINK_ERR.replace(/\+/g, ' ') + ') ขอลิงก์ใหม่ได้ที่นี่'); history.replaceState(null, '', HERE()); }
