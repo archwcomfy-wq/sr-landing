@@ -21,6 +21,14 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 .gate label{display:block;font-size:13px;color:var(--mut)}.gate form .mut{margin:6px 0 10px}
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:10px 0 6px}.seg button{flex:1;font:inherit;font-size:14px;padding:8px;border:0;background:var(--card);color:var(--fg);cursor:pointer}
 .seg button.on{background:var(--acc);color:#fff}.btn.wide{padding:7px 18px;font-size:14px}.links{font-size:13px;margin-top:10px}.links a{color:var(--acc)}
+.main{display:flex;flex:1;min-height:0}.pane{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0}#cview{flex:1;width:100%;border:0;background:var(--bg)}
+.side{width:200px;flex:none;border-right:1px solid var(--line);background:var(--card);padding:12px 10px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.side h3{font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--mut);margin:0 4px 2px}.side .hint{font-size:11.5px;color:var(--mut);margin:2px 4px 8px;line-height:1.45}
+.side button{font:inherit;text-align:left;font-size:13.5px;line-height:1.35;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);cursor:pointer}
+.side button small{display:block;font-size:11px;color:var(--mut);margin-top:2px}.side button.on{background:var(--acc);border-color:var(--acc);color:#fff}.side button.on small{color:#fff;opacity:.85}
+.side .back{margin-top:auto;font-size:12px;color:var(--mut);padding:6px 4px}
+@media (max-width:760px){.main{flex-direction:column}.side{width:auto;flex-direction:row;align-items:stretch;border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;overflow-x:auto}
+.side h3,.side .hint,.side .back{display:none}.side button{flex:1 1 0;min-width:0;padding:6px 10px;font-size:13px}}
 .msg{font-size:13.5px;margin-top:10px;color:var(--neg,#c0392b)}.msg.ok{color:var(--mut)}.msg:empty{display:none}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
 </style></head><body><section id="login" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1>
 <div class="seg"><button type="button" data-mode="login">เข้าสู่ระบบ</button><button type="button" data-mode="register">สมัครสมาชิกใหม่</button></div>
@@ -62,7 +70,12 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 <span class="tabs"><button data-tab="auto">อัตโนมัติ</button> <button data-tab="premarket">ก่อนตลาดเปิด</button> <button data-tab="live">Live</button>
 <button data-tab="evening">ผลประเมินเย็น</button> <button data-tab="members" id="tab-members" hidden>สมาชิก<span id="pending"></span></button></span>
 <span class="mut" id="clock"></span><span class="mut" id="who"></span><button class="btn changepw">รหัสผ่าน</button><button class="btn logout">ออก</button></div>
-<iframe id="view" title="SR"></iframe><div id="members" hidden></div></section><script>
+<div class="main"><aside class="side" aria-label="กลยุทธ์ถือยาว"><h3>กลยุทธ์ถือยาว · จุดต่ำรอบ</h3>
+<div class="hint">คนละกลยุทธ์กับ Live เทรดรายวันด้านบน · อัปเดตหลังปิดตลาด</div>
+<button type="button" data-side="cycle_fin">จุดต่ำรอบ: แบงก์–นอนแบงก์<small></small></button>
+<button type="button" data-side="cycle_sr">จุดต่ำรอบ: SR 27 กลุ่ม + นอกกลุ่ม<small></small></button>
+<div class="back">กดแท็บด้านบนเพื่อกลับไปหน้า Live</div></aside>
+<div class="pane"><iframe id="view" title="SR"></iframe><iframe id="cview" title="จุดต่ำรอบ" hidden></iframe><div id="members" hidden></div></div></div></section><script>
 window.SB = window.supabase.createClient(SR_CONFIG.url, SR_CONFIG.key, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}});
 async function srDoc(key, col) {
   const {data, error} = await SB.from('sr_docs').select(col + ',updated_at').eq('key', key).maybeSingle();
@@ -77,6 +90,9 @@ const store = {get(k, d) { try { const v = localStorage.getItem(k); return v == 
                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }};
 const VIEW = {premarket: {doc: 'premarket'}, live: {src: 'live.html'}, live_done: {src: 'live.html'}, evening: {doc: 'evening'}};
 let TAB = store.get('sr_tab', 'auto'), STAGE = null, SHOWN = '', TIMER = null, ME = null;
+// left-hand menu: long-hold strategy pages (cycle-low radars). Separate from the day-trade tabs on top:
+// while one is open the top view is hidden (live.html keeps running untouched) and the 10-s poll does not switch views.
+let SIDE = null, CSHOWN = '';
 // a "set new password" link from the e-mail lands here with #...type=recovery (read before the client clears the address)
 let RECOVERY = /type=recovery/.test(location.hash), SETPW_BACK = null;
 const LINK_ERR = (() => { const h = new URLSearchParams(location.hash.slice(1)); return h.get('error_description') || h.get('error') || ''; })();
@@ -99,11 +115,45 @@ async function show(stage) {
 }
 function pick(tab) {
   TAB = tab; store.set('sr_tab', tab);
+  SIDE = null; $('#cview').hidden = true;
+  document.querySelectorAll('[data-side]').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (tab === 'members') { showMembers(); return; }
   apply();
 }
-function apply() { if (TAB !== 'members') show(TAB === 'auto' ? (STAGE?.stage || 'premarket') : TAB); }
+function apply() { if (SIDE) return; if (TAB !== 'members') show(TAB === 'auto' ? (STAGE?.stage || 'premarket') : TAB); }
+const NOSIDE = '<p style="font:15px system-ui;padding:20px;color:#777">ยังไม่มีข้อมูลหน้านี้ (หน้าจะขึ้นเมื่อส่งผลการคำนวณรอบล่าสุดจากเครื่อง)</p>';
+const CDOC = {};                                     // key -> {at, html}: switching between the two pages needs no re-download
+function stamp(key, at) {
+  const el = document.querySelector(`[data-side="${key}"] small`); if (!el || !at) return;
+  el.textContent = 'ส่งขึ้น ' + new Date(at).toLocaleString('th-TH', {timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+}
+async function side(key) {
+  SIDE = key;
+  document.querySelectorAll('[data-side]').forEach(b => b.classList.toggle('on', b.dataset.side === key));
+  document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('on'));
+  $('#view').hidden = true; $('#members').hidden = true;
+  const f = $('#cview'); f.hidden = false;
+  try {
+    const {data: m, error} = await SB.from('sr_docs').select('updated_at').eq('key', key).maybeSingle();
+    if (error) throw error;
+    if (!m) throw new Error('no ' + key);
+    stamp(key, m.updated_at);
+    if (CSHOWN === key + m.updated_at) return;
+    if (CDOC[key]?.at !== m.updated_at) {
+      CSHOWN = ''; f.srcdoc = '<p style="font:15px system-ui;padding:20px;color:#777">กำลังโหลด…</p>';
+      const d = await srDoc(key, 'html');
+      CDOC[key] = {at: d.updated_at, html: d.html || NOSIDE};
+    }
+    if (SIDE !== key) return;                          // another menu item was clicked meanwhile
+    CSHOWN = key + CDOC[key].at; f.srcdoc = CDOC[key].html;
+  } catch (e) { if (SIDE === key) { CSHOWN = ''; f.srcdoc = NOSIDE; } }
+}
+async function sideStamps() {
+  const keys = [...document.querySelectorAll('[data-side]')].map(b => b.dataset.side);
+  const {data} = await SB.from('sr_docs').select('key,updated_at').in('key', keys);
+  (data || []).forEach(r => stamp(r.key, r.updated_at));
+}
 async function poll() {
   try {
     const d = await srDoc('landing', 'data'), j = d.data;
@@ -205,7 +255,11 @@ async function render() {
   screen('app');
   $('#who').textContent = session.user.email;
   $('#tab-members').hidden = ME.role !== 'admin';
-  if (!TIMER) { pick(TAB === 'members' && ME.role !== 'admin' ? 'auto' : TAB); poll(); TIMER = setInterval(poll, 10000); }
+  if (!TIMER) {
+    if (TAB === 'members' && ME.role !== 'admin') TAB = 'auto';
+    if (SIDE) side(SIDE); else pick(TAB);
+    poll(); sideStamps().catch(() => {}); TIMER = setInterval(poll, 10000);
+  }
 }
 
 // ---------- owner: approve / reject members
@@ -244,8 +298,9 @@ document.querySelectorAll('.changepw').forEach(b => b.addEventListener('click', 
 document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => mode(b.dataset.mode)));
 document.querySelectorAll('[data-goto]').forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); mode(a.dataset.goto); }));
 $('#recheck').addEventListener('click', () => render());
-document.querySelectorAll('.logout').forEach(b => b.addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; SETPW_BACK = null; RECOVERY = false; mode('login'); render(); }));
+document.querySelectorAll('.logout').forEach(b => b.addEventListener('click', async () => { await SB.auth.signOut(); SHOWN = ''; SIDE = null; CSHOWN = ''; for (const k in CDOC) delete CDOC[k]; SETPW_BACK = null; RECOVERY = false; mode('login'); render(); }));
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => pick(b.dataset.tab));
+document.querySelectorAll('[data-side]').forEach(b => b.onclick = () => side(b.dataset.side));
 SB.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') RECOVERY = true; setTimeout(render, 0); });
 mode(store.get('sr_mode', 'login'));
 if (LINK_ERR) { mode('forgot'); say('#m-forgot', 'ลิงก์ในอีเมลใช้ไม่ได้หรือหมดอายุแล้ว (' + LINK_ERR.replace(/\+/g, ' ') + ') ขอลิงก์ใหม่ได้ที่นี่'); history.replaceState(null, '', HERE()); }
