@@ -41,10 +41,16 @@ a{color:var(--acc)}ul{padding-left:18px;margin:4px 0}li{margin:3px 0}
 .tchip{display:inline-block;font-size:12px;padding:1px 7px;border-radius:999px;white-space:nowrap}.tchip.tg{background:var(--chip);color:var(--pos);font-weight:600}.tchip.tb{background:var(--warnbg);color:var(--warnfg)}
 h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(--acc)}
 :root{--warnbg:#fff8e1;--warnfg:#8a6100}@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--warnbg:#2e2711;--warnfg:#f2c230}}:root[data-theme=dark]{--warnbg:#2e2711;--warnfg:#f2c230}.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
-</style></head><body><main><h1>Live กลุ่มนำ · <span id="clock">–</span></h1>
+.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,440px);gap:12px;align-items:start}.top-l{min-width:0}
+@media (max-width:980px){.top{grid-template-columns:1fr}}
+.gcue{border-left:4px solid var(--acc);font-size:13px;line-height:1.45;max-height:78vh;overflow:auto}.gc-moves{margin:4px 0 6px}
+.gc-tab td,.gc-tab th{padding:3px 6px;font-size:12.5px}.gc-link{font-size:11.5px}.gc-cont{font-size:12px;color:var(--warnfg)}
+.gc-news{margin:3px 0;font-size:12.5px}.gc-news .chip{font-size:11px;padding:0 6px;margin-right:2px}.gc-note{margin:4px 0}.gc-note summary,.gcue details summary{cursor:pointer}
+</style></head><body><main><div class="top"><div class="top-l"><h1>Live กลุ่มนำ · <span id="clock">–</span></h1>
 <div class="mut" id="feed">กำลังโหลด…</div>
 <div id="market"></div>
-<div class="card"><b>ยืนยันแล้ว:</b> <span id="alerts"></span></div>
+<div class="card"><b>ยืนยันแล้ว:</b> <span id="alerts"></span></div></div>
+<aside class="card gcue" id="global" aria-label="สัญญาณจากต่างประเทศ"><span class="mut">กำลังโหลดสัญญาณต่างประเทศ…</span></aside></div>
 <div id="plan"></div>
 <h2>กราฟแท่งเทียน</h2>
 <div class="ivbar">ช่วงแท่ง: <button data-iv="1">1 นาที</button> <button data-iv="3">3 นาที</button> <button data-iv="5">5 นาที</button> <button data-iv="15">15 นาที</button>
@@ -203,6 +209,64 @@ function trendChip(t, ok) {
   const good = ok == null ? trendOk(t) : ok;
   return `<span class="tchip ${good ? 'tg' : 'tb'}">${esc(t)}</span>`;
 }
+// short-term state of a pick (plan.short, 16 Oct 2026): distance below the 5-day high, place in the 10-day range
+function shortChip(s) {
+  if (!s) return '';
+  const parts = [];
+  if (s.dd5 != null) parts.push(`${s.dd5 <= -0.03 ? 'ย่อ' : 'ใกล้ยอด'} ${(s.dd5 * 100).toFixed(1)}% จากยอด 5 วัน`);
+  if (s.k10 != null) parts.push(`ปิดวานที่ ${Math.round(s.k10 * 100)}% ของกรอบ 10 วัน`);
+  return parts.length ? `<div class="mut" style="font-size:11.5px;margin-top:2px">${parts.join(' · ')}</div>` : '';
+}
+function shortRuleText(r) {
+  if (!r) return '';
+  const t = [];
+  if (r.k10_max != null) t.push(`ราคาปิดเมื่อวานต้องไม่อยู่บนสุดของกรอบ 10 วัน (ต่ำกว่า ${Math.round(r.k10_max * 100)}%)`);
+  if (r.dd5_max != null) t.push(`ราคาตอนตั้งแผนต้องต่ำกว่ายอด 5 วันอย่างน้อย ${Math.abs(r.dd5_max * 100).toFixed(0)}%`);
+  return t.length ? `กรองระยะสั้น (ไม่ไล่ราคา รอรับตอนย่อ): ${t.join(' และ ')} ·` : '';
+}
+// ---------- overseas cues (srlive/global_cues.py, premarket 07:35): information only, the plan does not use them
+let GOPEN = store.get('sr_gnews', false), GLOBAL = null;
+async function loadGlobal() {
+  try { GLOBAL = await SRD.get('global_cues'); } catch (e) {}
+  const gx = document.getElementById('global'); if (gx && SNAP) gx.innerHTML = globalHtml();
+}
+function globalHtml() {
+  const G = GLOBAL;
+  if (!G) return '<b>สัญญาณจากต่างประเทศ</b><div class="mut">ยังไม่มีข้อมูล (premarket 07:35 จะสร้างให้)</div>';
+  const now = {}; (SNAP.groups || []).forEach(g => { now[g.code] = g.chg; });
+  const mv = (m, d = 1) => m == null || isNaN(m) ? '–' : `<span class="${m > 0 ? 'pos' : m < 0 ? 'neg' : ''}">${m > 0 ? '+' : ''}${(m * 100).toFixed(d)}%</span>`;
+  const reg = {'US': 'US ปิดล่าสุด', 'สินค้า': 'สินค้า', 'ค่าเงิน': 'ค่าเงิน', 'เอเชีย': 'เอเชีย ปิดล่าสุด'};
+  const moves = Object.keys(reg).map(r => {
+    const L = (G.moves || []).filter(x => x.region === r && x.move != null);
+    return L.length ? `<div><span class="mut">${reg[r]}:</span> ${L.map(x => `${esc(x.name)} ${mv(x.move)}`).join(' · ')}</div>` : '';
+  }).join('');
+  const live = (SNAP.markets || []).filter(x => x.chg != null);
+  const liveRow = live.length ? `<div><span class="mut">ตอนนี้:</span> ${live.map(x => `${esc(x.name)} ${mv(x.chg)}`).join(' · ')}</div>` : '';
+  const cues = (G.cues || []).filter(c => c.code && c.r2 != null && c.r2 >= 0.10 && Math.abs(c.exp_gap) >= 0.003).slice(0, 7);
+  const rows = cues.map(c => {
+    const n = now[c.code];
+    const link = (c.linked || []).filter(l => Math.abs(l.r) >= 0.12).slice(0, 2).map(l => esc(l.name) + (l.r < 0 ? ' (สวนทาง)' : '')).join(', ');
+    const why = (c.drivers || []).filter(d => Math.abs(d.contrib) >= 0.0008).slice(0, 2).map(d => `${esc(d.name)} ${mv(d.move)}`).join(', ');
+    const cont = (c.cont || []).map(k => `<div class="gc-cont">${k.side === 'top' ? '▲' : '▼'} ${esc(k.name)} ${mv(k.move)}: ย้อนหลังกลุ่มนี้หลังเปิดมัก${k.side === 'top' ? 'แรง' : 'อ่อน'}กว่าตลาดต่อ ` +
+      `${k.after_open.map(v => mv(v, 2)).join(' / ')} <span class="mut">(2564–67 / 2568–69 · ผ่านทดสอบ 2 ช่วง)</span></div>`).join('');
+    return `<tr><td class="l"><a href="#" onclick="showGroup('${c.code}');return false"><b>${esc(c.code)}</b></a>${link ? `<div class="mut gc-link">ไวต่อ ${link}</div>` : ''}</td>
+      <td>${mv(c.exp_gap)}</td><td>${n == null ? '–' : mv(n)}</td><td class="l mut">${why}</td></tr>` + (cont ? `<tr><td colspan="4" class="l">${cont}</td></tr>` : '');
+  }).join('');
+  const N = G.news || [];
+  const news = N.length ? `<details ${GOPEN ? 'open' : ''} ontoggle="GOPEN=this.open;store.set('sr_gnews',GOPEN)"><summary><b>ข่าวตลาดต่างประเทศ</b> <span class="mut">${N.length} หัวข้อ${G.news_at ? ' · อัปเดต ' + esc(G.news_at) : ''}</span></summary>` +
+    N.slice(0, 12).map(x => `<div class="gc-news"><span class="mut">${esc(x.t)}</span> ${(x.codes || []).map(c => `<span class="chip">${esc(c)}</span>`).join('')} ` +
+      `<a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a></div>`).join('') + '</details>' : '<div class="mut">ยังไม่มีข่าวต่างประเทศ</div>';
+  return `<b>สัญญาณจากต่างประเทศ</b> <span class="mut">· ตั้งแต่ปิด SET ${esc(G.since)} · ข้อมูลประกอบ ไม่ได้ใช้คัดแผน</span>
+    <div class="gc-moves">${moves}${liveRow}</div>
+    ${rows ? `<div class="wrap"><table class="gc-tab"><tr><th class="l">กลุ่ม</th><th>คาดเปิด<span class="th">จากต่างประเทศ</span></th><th>ตอนนี้<span class="th">เทียบปิดวานนี้</span></th><th class="l">เพราะ</th></tr>${rows}</table></div>`
+           : '<div class="mut">เมื่อคืนต่างประเทศขยับไม่มาก ไม่มีกลุ่มที่คาดว่าจะเปิดต่างจากปกติเกิน 0.3%</div>'}
+    <details class="gc-note"><summary class="mut">หลักฐานจาก backtest (กดดู)</summary><div class="mut">ทดสอบกลุ่ม SET มี.ค. 2564–ต.ค. 2569 กับตลาดต่างประเทศ 65 ชุด (หาเกณฑ์ 2564–67 ยืนยัน 2568–69):
+      กลุ่มไวต่อต่างประเทศจริง เช่น ELEC ตามชิป US, ENERGY ตามน้ำมัน, กลุ่มตั้งรับสวนทางหุ้น US แต่ <b>ส่วนใหญ่ตอบสนองตั้งแต่ราคาเปิด</b>
+      หลัง 10:05 แทบไม่ตามต่อ และถ้าต่างประเทศขยับแรง กลุ่มมักย่อกลับเล็กน้อยหลังเปิด (−0.07% ถึง −0.12%) ·
+      ข้อยกเว้นที่ผ่านทั้ง 2 ช่วง: ENERGY ไปต่อตามหุ้นพลังงาน US (XLE) · การขยับของเอเชียช่วงเช้าก่อน 10:00 ไม่ได้ทำนายช่วงหลังจากนั้น ·
+      "คาดเปิด" = แบบจำลองจากข้อมูลย้อนหลัง อธิบาย gap ได้ราว 10–24% แล้วแต่กลุ่ม (แสดงเฉพาะกลุ่มที่ ≥ 10%)</div></details>
+    ${news}`;
+}
 function planHtml() {
   const plans = SNAP.plans || [], cur = SNAP.session || 'am';
   const S = SNAP.sessions || {am: {name: 'ช่วงเช้า (Open1)', start: '10:05', cancel: '11:00', tp: 0.015}, pm: {name: 'ช่วงบ่าย (Open2)', start: '14:05', cancel: '15:00', tp: 0.01, pre_from: '13:30'}};
@@ -233,7 +297,7 @@ function planCard(p) {
         : x.expired ? '<span class="chip">เลยเวลายกเลิก ไม่ถึง bid</span>' : '<span class="chip">รอราคาลงถึง bid</span>';
       const nr = p.now_rank?.[x.symbol];
       return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' || x.source === 'pool' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
-        <td class="l">${trendChip(x.trend)}</td>
+        <td class="l">${trendChip(x.trend)}${shortChip(x.short)}</td>
         <td>${num(x.last)} <span class="mut">(${pct(x.chg)})</span></td><td>${num(now)} <span class="mut">(${pct(q?.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
         ${stats ? `<td>${x.p_tp != null ? Math.round(x.p_tp * 100) + '%' : '–'}</td><td>${pct(x.ev)}</td>` : ''}<td>${nr ? '#' + nr : '<span class="mut">ไม่ติด 5 อันดับ</span>'}</td><td>${st}</td>
         <td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
@@ -250,7 +314,7 @@ function planCard(p) {
       ${stats ? '<th>โอกาสถึงเป้า*<span class="th">เมื่อซื้อได้</span></th><th>กำไรเฉลี่ยย้อนหลัง*<span class="th">ต่อรายการ</span></th>' : ''}
       <th>อันดับเมื่อคัดใหม่<span class="th">ล่าสุด ${esc(p.now_hm || '')}</span></th><th>สถานะ</th><th></th></tr>${rows}</table></div>
       ${top.length ? `<div style="margin-top:6px"><b>ถ้าคัดใหม่ตอนนี้ (${esc(p.now_hm || '')}) จะมีเพิ่ม</b> <span class="mut">(ข้อมูลเท่านั้น ไม่ใช่แผนทางการ)</span>: ${top.map(d => `<a href="#" onclick="addExtra('${d.symbol}');return false"><b>${esc(d.symbol)}</b></a>${d.source === 'reserve' ? ' (สำรอง)' : d.source === 'other_group' ? ' (' + esc(d.code) + ')' : ''} #${d.rank} ${pct(d.chg)} bid ${num(d.bid)} เป้า ${num(d.tp)}`).join(' · ')}</div>` : ''}
-      <div class="mut">bid ต่ำกว่าราคาตอนตั้ง ${p.bid_ticks} ช่อง · ยกเลิกถ้าไม่ได้ของภายใน ${esc(p.cancel_after)} · ไม่ถึงเป้าขายตอนปิด · ${stats ? '*ทดสอบย้อนหลัง 55 วัน ตามอันดับ (โอกาสถึงเป้าเมื่อได้ของ) ·' : 'ลำดับ 1–5 เรียงจากคะแนนแผน · ยังไม่แสดงเปอร์เซ็นต์โอกาสถึงเป้า จนกว่าจะมีผลทดสอบของกฎคัดปัจจุบัน ·'} ${p.trend_rule && p.trend_rule !== 'none' ? `คัดเฉพาะหุ้นขาขึ้น (ราคาปิด > ${MA()}20 > ${MA()}50 และ ${MA()}20 ชี้ขึ้น) ·` : ''} สำรอง = กลุ่มนำ บวกแต่ซื้อขายเบา ยังไม่มีสถิติทดสอบ · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`);
+      <div class="mut">bid ต่ำกว่าราคาตอนตั้ง ${p.bid_ticks} ช่อง · ยกเลิกถ้าไม่ได้ของภายใน ${esc(p.cancel_after)} · ไม่ถึงเป้าขายตอนปิด · ${stats ? '*ทดสอบย้อนหลัง 55 วัน ตามอันดับ (โอกาสถึงเป้าเมื่อได้ของ) ·' : 'ลำดับ 1–5 เรียงจากคะแนนแผน · ยังไม่แสดงเปอร์เซ็นต์โอกาสถึงเป้า จนกว่าจะมีผลทดสอบของกฎคัดปัจจุบัน ·'} ${p.trend_rule && p.trend_rule !== 'none' ? `คัดเฉพาะหุ้นขาขึ้น (ราคาปิด > ${MA()}20 > ${MA()}50 และ ${MA()}20 ชี้ขึ้น) ·` : ''} ${shortRuleText(p.short_rule)} สำรอง = กลุ่มนำ บวกแต่ซื้อขายเบา ยังไม่มีสถิติทดสอบ · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`);
 }
 function provisionalHtml() {
   const p = SNAP.provisional;
@@ -266,14 +330,14 @@ function provisionalHtml() {
   const rows = (p.picks || []).filter(x => x.pick).map(x => {
     const q = quoteOf(x.symbol);
     return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' || x.source === 'pool' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
-      <td class="l">${trendChip(x.trend)}</td><td>${num(q?.last ?? x.last)} <span class="mut">(${pct(q?.chg ?? x.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
+      <td class="l">${trendChip(x.trend)}${shortChip(x.short)}</td><td>${num(q?.last ?? x.last)} <span class="mut">(${pct(q?.chg ?? x.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
       <td>${pct(x.from_low)}</td><td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
   }).join('');
   return `<div class="card provisional">${head}${note}${checks}
     <div class="wrap"><table><tr><th>อันดับ<span class="th">ชั่วคราว</span></th><th class="l">หุ้น</th><th class="l">เทรนด์รายวัน</th><th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th>
     <th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาล่าสุด ${p.bid_ticks} ช่อง</span></th><th>ราคาเป้าขาย<span class="th">bid +${(p.take_profit * 100).toFixed(1)}%</span></th>
     <th>จากราคาต่ำสุด<span class="th">วันนี้</span></th><th></th></tr>${rows}</table></div>
-    <div class="mut">คำนวณเมื่อ ${esc(p.time)} · ${st.mode === 'all' ? 'คัดใหม่ทุกครั้งที่ราคาอัปเดต' : st.cand ? 'ผู้นำเดียวกันตั้งแต่ ' + esc(st.since) : 'ผู้นำยังไม่ผ่านเกณฑ์ยืนยัน'} · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`;
+    <div class="mut">คำนวณเมื่อ ${esc(p.time)} · ${shortRuleText(p.short_rule)} ${st.mode === 'all' ? 'คัดใหม่ทุกครั้งที่ราคาอัปเดต' : st.cand ? 'ผู้นำเดียวกันตั้งแต่ ' + esc(st.since) : 'ผู้นำยังไม่ผ่านเกณฑ์ยืนยัน'} · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`;
 }
 const LEVEL = {down_hard: ['lv-red', 'ตลาดลงแรง'], down: ['lv-amber', 'ตลาดติดลบ'], flat: ['lv-gray', 'ตลาดทรงตัว'], up: ['lv-green', 'ตลาดบวก']};
 function spark(series, prev) {
@@ -350,6 +414,7 @@ async function loadSnap() {
     $('#feed').innerHTML = `${esc(SNAP.source)} · ${PH[SNAP.phase] || (SNAP.market_open ? 'ตลาดเปิด ' + esc(SNAP.open_time || '') : '<b>ก่อนเปิด (ราคาคาดการณ์)</b>')} · ราคาครบ ${SNAP.n_quotes}/${SNAP.n_stocks}` + (f ? ` · เรียลไทม์ ${f.realtime} ตัว ที่เหลือทุก ~${f.rest_cycle_s ?? '–'} วิ` : '');
     $('#alerts').innerHTML = (SNAP.alerts || []).map(a => `<span class="chip ok">${esc(a)}</span>`).join(' ') || '<span class="mut">ยังไม่มีกลุ่มยืนยัน</span>';
     $('#market').innerHTML = marketHtml();
+    { const gx = document.getElementById('global'); if (gx && !gx.matches(':hover')) gx.innerHTML = globalHtml(); }
     $('#scan').innerHTML = strongHtml();
     $('#plan').innerHTML = planHtml();
     $('#groups').innerHTML = groupsHtml();
@@ -365,6 +430,6 @@ function setIv(n) { INTERVAL = n; store.set('sr_iv', n); document.querySelectorA
 document.querySelectorAll('[data-iv]').forEach(b => b.addEventListener('click', () => setIv(+b.dataset.iv)));
 { const ou = document.getElementById('onlyup'); if (ou) { ou.checked = ONLYUP; ou.addEventListener('change', () => { ONLYUP = ou.checked; store.set('sr_onlyup', ONLYUP); if (SNAP) $('#scan').innerHTML = strongHtml(); }); } }
 setIv(INTERVAL);
-loadSnap(); loadBars();
-setInterval(loadSnap, REFRESH); setInterval(loadBars, 15000);
+loadSnap(); loadBars(); loadGlobal();
+setInterval(loadSnap, REFRESH); setInterval(loadBars, 15000); setInterval(loadGlobal, 60000);
 </script></body></html>
