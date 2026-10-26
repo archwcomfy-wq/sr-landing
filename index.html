@@ -37,6 +37,20 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 @media (max-width:760px){.main{flex-direction:column}.side{width:auto;flex-direction:row;flex-wrap:wrap;align-items:stretch;border-right:0;border-bottom:3px solid var(--lt);padding:8px 10px}
 .side-head{flex:1 0 100%;padding:6px 10px}.side-head b{font-size:14px;display:inline-flex}.side-head b i{font-size:16px}.side-head br{display:none}.side-head em{display:inline;font-style:normal}.side-head span{display:inline;margin:0 0 0 6px;font-size:11.5px}.side .back{display:none}
 .side button{flex:1 1 0;min-width:0;padding:6px 10px;font-size:13px}#cbanner{padding:6px 10px;font-size:12.5px}#cbanner>span:not(.sp){display:none}}
+.divbox{border:1px solid var(--lt-line);border-radius:10px;background:var(--card);font-size:12.5px;line-height:1.4;flex:none}
+.divbox>summary{cursor:pointer;padding:8px 10px;list-style:none}.divbox>summary::-webkit-details-marker{display:none}
+.divbox>summary b{display:flex;justify-content:space-between;font-size:13.5px;color:var(--lt-ink)}.divbox>summary b::after{content:'▾';font-weight:400}.divbox:not([open])>summary b::after{content:'▸'}
+.divbox>summary small{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+#divlist{padding:0 8px 8px;display:flex;flex-direction:column;gap:6px}#divlist:empty{display:none}
+.dvg{margin:0;font-size:11.5px;color:var(--mut)}
+.dv{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;color:var(--fg);text-decoration:none}
+.dv:hover{border-color:var(--lt)}.dv.late{opacity:.55}
+.dv .d1{display:flex;gap:6px;align-items:baseline}.dv .d1>span{margin-left:auto;font-size:12px;font-weight:600;color:var(--lt)}
+.dv .d1 i{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:999px;background:var(--lt-bg);color:var(--lt-ink)}
+.dv .d2{font-size:12px}.dv .d3{font-size:11px;color:var(--mut)}
+.dvthin{font-size:11.5px}.dvthin summary{cursor:pointer;color:var(--mut)}.dvthin a{display:block;color:var(--fg);text-decoration:none;padding:2px 0}
+.dvh{font-weight:600;font-size:12px;margin-top:2px;color:var(--lt-ink)}.dvn{display:block;font-size:11.5px;color:var(--fg);text-decoration:none}.dvn small{display:block;color:var(--mut);font-size:10.5px}.dvn:hover{color:var(--acc)}
+@media (max-width:760px){.divbox{flex:1 0 100%}}
 .msg{font-size:13.5px;margin-top:10px;color:var(--neg,#c0392b)}.msg.ok{color:var(--mut)}.msg:empty{display:none}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
 </style></head><body><section id="login" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1>
 <div class="seg"><button type="button" data-mode="login">เข้าสู่ระบบ</button><button type="button" data-mode="register">สมัครสมาชิกใหม่</button></div>
@@ -85,6 +99,7 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 <button type="button" data-side="cycle_btsg">เครือ BTS (BTS · VGI) ฉบับละเอียด<small></small></button>
 <button type="button" data-side="cycle_energy">กลุ่มพลังงาน–ปิโตรเคมี (PTT · SCC) ฉบับละเอียด<small></small></button>
 <button type="button" data-side="cycle_bank">กลุ่มธนาคาร (KBANK · SCB · BBL) ฉบับละเอียด<small></small></button>
+<details class="divbox" id="divbox"><summary><b>฿ ปันผลที่จะขึ้น XD</b><small id="divsub">กำลังโหลด…</small></summary><div id="divlist"></div></details>
 <div class="back">อัปเดตอัตโนมัติทุกเช้าวันทำการก่อนตลาดเปิด · กดแท็บด้านบนเพื่อกลับไปหน้า Live</div></aside>
 <div class="pane"><div id="cbanner" hidden><b>⚠ กำลังดูกลยุทธ์ถือยาว (รอซื้อที่จุดต่ำของรอบ)</b><span>ราคา ณ ปิดตลาดวันทำการก่อนหน้า ไม่ใช่ราคาเรียลไทม์ ไม่ใช้กับการเทรดรายวัน</span><span class="sp"></span><button type="button" id="cback">← กลับไปหน้า Live</button></div>
 <iframe id="view" title="SR"></iframe><iframe id="cview" title="จุดต่ำรอบ" hidden></iframe><div id="members" hidden></div></div></div></section><script>
@@ -174,6 +189,46 @@ async function poll() {
   } catch (e) { $('#dot').className = 'dot'; $('#stage').textContent = 'ยังไม่มีข้อมูลจากเครื่อง หรือเชื่อมต่อไม่ได้'; }
   apply();
   if (ME?.role === 'admin') countPending();
+}
+// ---------- dividend box in the left menu (26 Oct 2026): upcoming XD dates from SET, refreshed by the PC every evening
+// (dividends.py -> sr_docs key 'dividends'). Information only: no ranking, no buy signal.
+const TH_MS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'], TH_WD = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+let DIV_INIT = false, DIV_T = null;
+function thd(s, wd) { if (!s) return '–'; const d = new Date(String(s).slice(0, 10) + 'T00:00:00'); return (wd ? TH_WD[d.getDay()] + ' ' : '') + d.getDate() + ' ' + TH_MS[d.getMonth()]; }
+function bkkToday() { return new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Bangkok'}); }
+const pc = (v, d = 1) => v == null ? '–' : (v * 100).toFixed(d) + '%';
+const sg = (v, d = 1) => v == null ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v * 100).toFixed(d) + '%';
+const baht = v => v == null ? '–' : (v >= 1 ? v.toFixed(2) : String(+v.toFixed(4))) + ' บ.';
+function divItem(x, today) {
+  const late = x.last_buy < today;
+  const amt = x.stock && !x.amt ? 'หุ้นปันผล ' + esc(x.ratio || '') : baht(x.amt) + (x.tentative ? ' (ประมาณ)' : '');
+  const pre = x.pre && x.pre.n >= 3 ? `10 วันก่อน XD ที่ผ่านมา เฉลี่ย ${sg(x.pre.avg)} (ขึ้น ${x.pre.up}/${x.pre.n} ครั้ง)` : 'ประวัติ XD ยังน้อย';
+  const rec = x.rec && x.rec.n + x.rec.miss >= 3 && x.rec.med != null
+    ? ` · หลัง XD กลับถึงราคาเดิม ~${x.rec.med} วัน${x.rec.miss ? ` (ไม่กลับใน 60 วัน ${x.rec.miss}/${x.rec.n + x.rec.miss} ครั้ง)` : ''}` : '';
+  return `<a class="dv${late ? ' late' : ''}" href="https://www.set.or.th/th/market/product/stock/quote/${encodeURIComponent(x.s)}/rights-benefits" target="_blank" rel="noopener">
+    <span class="d1"><b>${esc(x.s)}</b>${x.sr ? '<i>ติดตาม</i>' : ''}<span>XD ${thd(x.xd, true)}</span></span>
+    <span class="d2">${amt} · ครั้งนี้ ${pc(x.yld)}${x.ttm ? ' · รวม 12 ด. ' + pc(x.ttm) : ''}</span>
+    <span class="d2">${late ? 'เลยวันซื้อเพื่อรับสิทธิ์แล้ว' : 'ซื้อได้ถึง <b>' + thd(x.last_buy, true) + '</b>'} · จ่าย ${thd(x.pay)}</span>
+    <span class="d3">${pre}${rec}</span>
+    ${x.period || x.src ? `<span class="d3">${x.period ? 'งวด ' + esc(x.period) : ''}${x.period && x.src ? ' · ' : ''}${esc(x.src)}</span>` : ''}</a>`;
+}
+async function divBox() {
+  try {
+    const d = await srDoc('dividends', 'data'), j = d.data || {}, today = bkkToday();
+    const items = (j.items || []).filter(x => x.xd > today), thin = (j.thin || []).filter(x => x.xd > today);
+    const upd = new Date(d.updated_at).toLocaleString('th-TH', {timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+    $('#divsub').textContent = `${items.length} ตัว · ${j.window || 45} วันข้างหน้า · อัปเดต ${upd}`;
+    const guide = `<details class="dvthin"><summary>ได้สิทธิ์เมื่อถือถึงสิ้นวัน "ซื้อได้ถึง" · วิธีอ่าน</summary><p class="dvg">ต้องมีหุ้นในพอร์ตเมื่อตลาดปิดวัน "ซื้อได้ถึง" (วันทำการก่อน XD) `
+      + `ซื้อวัน XD ไม่ได้สิทธิ์ · วัน XD ราคามักลดลงใกล้เคียงเงินปันผล · ปันผลหุ้นสามัญหักภาษี ณ ที่จ่าย 10% · "10 วันก่อน XD" = ราคาช่วง 10 วันทำการก่อน XD ครั้งก่อน ๆ ของหุ้นตัวนั้น `
+      + `"กลับถึงราคาเดิม" = กี่วันทำการหลัง XD ราคาปิดจึงกลับถึงราคาก่อน XD (สถิติตั้งแต่ปี 2564) · กดชื่อหุ้นเพื่อดูประกาศใน SET · ข้อมูลเพื่อทราบ ไม่ใช่คำแนะนำการลงทุน</p></details>`;
+    const list = items.length ? items.map(x => divItem(x, today)).join('')
+      : `<p class="dvg">ยังไม่มีหุ้นที่ซื้อขายเกิน ${j.min_adv || 5} ลบ./วัน ประกาศ XD ใน ${j.window || 45} วันข้างหน้า</p>`;
+    const th = thin.length ? `<details class="dvthin"><summary>ซื้อขายต่ำกว่า ${j.min_adv || 5} ลบ./วัน อีก ${thin.length} ตัว</summary>`
+      + thin.map(x => `<a href="https://www.set.or.th/th/market/product/stock/quote/${encodeURIComponent(x.s)}/rights-benefits" target="_blank" rel="noopener"><b>${esc(x.s)}</b> XD ${thd(x.xd)} · ${x.amt ? baht(x.amt) + ' (' + pc(x.yld) + ')' : 'หุ้นปันผล ' + esc(x.ratio || '')}</a>`).join('') + `</details>` : '';
+    const nw = (j.news || []).length ? `<div class="dvh">ข่าวปันผล 7 วันล่าสุด</div>` + j.news.map(n => `<a class="dvn" href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.t)}<small>${esc(n.src)} · ${thd(n.d)}</small></a>`).join('') : '';
+    $('#divlist').innerHTML = guide + list + th + nw;
+  } catch (e) { $('#divsub').textContent = 'ยังไม่มีข้อมูล (เครื่องจะส่งขึ้นหลังงานเย็น)'; $('#divlist').innerHTML = ''; }
+  if (!DIV_INIT) { DIV_INIT = true; $('#divbox').open = window.matchMedia('(min-width: 761px)').matches; }
 }
 function tick() { $('#clock').textContent = new Date().toLocaleTimeString('th-TH', {hour12: false, timeZone: 'Asia/Bangkok'}); }
 
@@ -271,6 +326,7 @@ async function render() {
     if (TAB === 'members' && ME.role !== 'admin') TAB = 'auto';
     if (SIDE) side(SIDE); else pick(TAB);
     poll(); sideStamps().catch(() => {}); TIMER = setInterval(poll, 10000);
+    divBox(); if (!DIV_T) DIV_T = setInterval(divBox, 30 * 60 * 1000);
   }
 }
 

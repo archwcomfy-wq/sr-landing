@@ -298,7 +298,7 @@ function planCard(p) {
       const nr = p.now_rank?.[x.symbol];
       return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' || x.source === 'pool' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
         <td class="l">${trendChip(x.trend)}${shortChip(x.short)}</td>
-        <td>${num(x.last)} <span class="mut">(${pct(x.chg)})</span></td><td>${num(now)} <span class="mut">(${pct(q?.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
+        <td>${num(x.last)} <span class="mut">(${pct(x.chg)})</span></td><td>${num(now)} <span class="mut">(${pct(q?.chg)})</span></td><td class="l">${activityHtml(x.symbol)}</td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
         ${stats ? `<td>${x.p_tp != null ? Math.round(x.p_tp * 100) + '%' : '–'}</td><td>${pct(x.ev)}</td>` : ''}<td>${nr ? '#' + nr : '<span class="mut">ไม่ติด 5 อันดับ</span>'}</td><td>${st}</td>
         <td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
     }).join('');
@@ -309,13 +309,50 @@ function planCard(p) {
       <div class="mut" style="margin:4px 0">${esc(p.confirm_note || '')}${p.provisional_since ? ' · ขึ้นเป็นกลุ่มนำชั่วคราวตั้งแต่ ' + esc(p.provisional_since) : ''}${chk} · ตัวเลขในแผนนี้คงที่ ไม่เปลี่ยนตามอันดับอีก</div>
       <b>${p.mode === 'all' ? 'รายการคัดจากหุ้นทุกตัวที่ติดตาม (ในกลุ่ม + นอกกลุ่ม)' : 'รายการคัดกลุ่มนำ ' + esc(p.code)}</b> <span class="mut">ตั้งเมื่อ ${esc(p.created_at || p.created)} · เรียงจากดีที่สุด · คุณเลือกเอง</span>
       <div class="wrap"><table><tr><th>อันดับ</th><th class="l">หุ้น</th><th class="l">เทรนด์รายวัน<span class="th">ถึงปิดวานนี้</span></th><th>ราคาตลาดตอนตั้งแผน<span class="th">(% เทียบปิดวานนี้)</span></th>
-      <th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th><th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาตอนตั้งแผน ${p.bid_ticks} ช่อง</span></th>
+      <th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th>${ACT_TH}<th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาตอนตั้งแผน ${p.bid_ticks} ช่อง</span></th>
       <th>ราคาเป้าขาย<span class="th">bid +${(p.take_profit * 100).toFixed(1)}%</span></th>
       ${stats ? '<th>โอกาสถึงเป้า*<span class="th">เมื่อซื้อได้</span></th><th>กำไรเฉลี่ยย้อนหลัง*<span class="th">ต่อรายการ</span></th>' : ''}
       <th>อันดับเมื่อคัดใหม่<span class="th">ล่าสุด ${esc(p.now_hm || '')}</span></th><th>สถานะ</th><th></th></tr>${rows}</table></div>
       ${top.length ? `<div style="margin-top:6px"><b>ถ้าคัดใหม่ตอนนี้ (${esc(p.now_hm || '')}) จะมีเพิ่ม</b> <span class="mut">(ข้อมูลเท่านั้น ไม่ใช่แผนทางการ)</span>: ${top.map(d => `<a href="#" onclick="addExtra('${d.symbol}');return false"><b>${esc(d.symbol)}</b></a>${d.source === 'reserve' ? ' (สำรอง)' : d.source === 'other_group' ? ' (' + esc(d.code) + ')' : ''} #${d.rank} ${pct(d.chg)} bid ${num(d.bid)} เป้า ${num(d.tp)}`).join(' · ')}</div>` : ''}
       <div class="mut">bid ต่ำกว่าราคาตอนตั้ง ${p.bid_ticks} ช่อง · ยกเลิกถ้าไม่ได้ของภายใน ${esc(p.cancel_after)} · ไม่ถึงเป้าขายตอนปิด · ${stats ? '*ทดสอบย้อนหลัง 55 วัน ตามอันดับ (โอกาสถึงเป้าเมื่อได้ของ) ·' : 'ลำดับ 1–5 เรียงจากคะแนนแผน · ยังไม่แสดงเปอร์เซ็นต์โอกาสถึงเป้า จนกว่าจะมีผลทดสอบของกฎคัดปัจจุบัน ·'} ${p.trend_rule && p.trend_rule !== 'none' ? `คัดเฉพาะหุ้นขาขึ้น (ราคาปิด > ${MA()}20 > ${MA()}50 และ ${MA()}20 ชี้ขึ้น) ·` : ''} ${shortRuleText(p.short_rule)} สำรอง = กลุ่มนำ บวกแต่ซื้อขายเบา ยังไม่มีสถิติทดสอบ · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`);
 }
+// ---- day-trade activity of a plan pick (26 Oct 2026): Pace = value traded so far vs a normal day at this hour,
+// moves = minutes (of the last 30 trading minutes) in which the 1-minute close changed. Cut-offs from Settrade 1-minute
+// bars, 30 Sep-15 Oct 2026, 86 stocks trading >= 50 MB/day: median 7 of 30 minutes, quietest quarter <= 4, busiest >= 10.
+function qAny(sym) { return quoteOf(sym) || (SNAP?.scan || []).find(x => x.symbol === sym) || null; }
+function tickOf(p) { return p < 2 ? 0.01 : p < 5 ? 0.02 : p < 10 ? 0.05 : p < 25 ? 0.1 : p < 100 ? 0.25 : p < 200 ? 0.5 : p < 400 ? 1 : 2; }
+function lastTradeMin() { let m = 0; for (const s in BARS) { const t = BARS[s]?.time; if (t && t.length) m = Math.max(m, Math.floor(t[t.length - 1] / 60)); } return m; }
+function moves30(sym) {
+  const b = BARS[sym]; if (!b || !b.time || b.time.length < 2) return null;
+  const n = b.time.length, day = Math.floor((b.time[n - 1] + 25200) / 86400);
+  const nowM = SNAP?.time ? Math.floor(Date.parse(SNAP.time.replace(' ', 'T') + '+07:00') / 60000) : Infinity;
+  const endM = Math.min(nowM, lastTradeMin() || Infinity);        // lunch break / after the close: last trading minute
+  let k = 0, prev = null, first = null;
+  for (let i = 0; i < n; i++) {
+    if (Math.floor((b.time[i] + 25200) / 86400) !== day) continue;           // today only
+    const m = Math.floor(b.time[i] / 60);
+    if (m > endM) break;
+    if (first == null) first = m;
+    if (m > endM - 30 && prev != null && b.close[i] !== prev) k++;
+    prev = b.close[i];
+  }
+  if (first == null) return null;
+  return {k, span: Math.max(1, Math.min(30, endM - first + 1))};
+}
+function activityHtml(sym) {
+  const q = qAny(sym), mv = moves30(sym), p = q?.pace;
+  const fr = mv ? mv.k / mv.span : null;
+  // คึก = price changes in >= 10 of 30 minutes and trading at least a normal pace; นิ่ง = <= 4 of 30 minutes, or a slow
+  // pace (< 0.5x) with below-median moves (< 7 of 30); no chip until the 1-minute bars are in
+  const lvl = fr == null ? null
+    : fr <= 4 / 30 || (p != null && p < 0.5 && fr < 7 / 30) ? 'n'
+    : fr >= 10 / 30 && (p == null || p >= 1) ? 'y' : 'm';
+  const chip = lvl === 'y' ? '<span class="tchip tg">คึก</span>' : lvl === 'n' ? '<span class="tchip tb">นิ่ง</span>' : lvl === 'm' ? '<span class="tchip" style="background:var(--chip)">ปกติ</span>' : '';
+  const rng = q && q.high != null && q.low != null && q.last ? Math.round((q.high - q.low) / tickOf(q.last)) : null;
+  return `${chip}<div class="mut" style="font-size:12px;line-height:1.35">Pace ${p == null ? '–' : num(p, 1) + '×'} · ${q?.value_mb == null ? '–' : num(q.value_mb, 0) + ' ลบ.'}<br>`
+    + `ขยับ ${mv ? mv.k + '/' + mv.span : '–'} นาที · วันนี้ ${rng == null ? '–' : rng} ช่อง</div>`;
+}
+const ACT_TH = '<th class="l" title="คึก = ราคาขยับอย่างน้อย 10 ใน 30 นาทีล่าสุด และ Pace ตั้งแต่ 1 · นิ่ง = ขยับไม่เกิน 4 ใน 30 นาที · Pace = มูลค่าซื้อขายเทียบวันปกติ ณ เวลาเดียวกัน · ช่อง = ช่วงสูงสุด–ต่ำสุดวันนี้นับเป็นช่องราคา">ความคึกตอนนี้<span class="th">สด · Pace · ราคาขยับกี่นาทีใน 30</span></th>';
 function provisionalHtml() {
   const p = SNAP.provisional;
   if (!p) return '';
@@ -330,11 +367,11 @@ function provisionalHtml() {
   const rows = (p.picks || []).filter(x => x.pick).map(x => {
     const q = quoteOf(x.symbol);
     return `<tr><td>${x.rank}</td><td class="l"><b>${esc(x.symbol)}</b>${x.source === 'other_group' || x.source === 'pool' ? ' <span class="mut">(' + esc(x.code) + ')</span>' : x.source === 'reserve' ? ' <span class="mut">(สำรอง)</span>' : ''}</td>
-      <td class="l">${trendChip(x.trend)}${shortChip(x.short)}</td><td>${num(q?.last ?? x.last)} <span class="mut">(${pct(q?.chg ?? x.chg)})</span></td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
+      <td class="l">${trendChip(x.trend)}${shortChip(x.short)}</td><td>${num(q?.last ?? x.last)} <span class="mut">(${pct(q?.chg ?? x.chg)})</span></td><td class="l">${activityHtml(x.symbol)}</td><td><b>${num(x.bid)}</b></td><td><b>${num(x.tp)}</b></td>
       <td>${pct(x.from_low)}</td><td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`;
   }).join('');
   return `<div class="card provisional">${head}${note}${checks}
-    <div class="wrap"><table><tr><th>อันดับ<span class="th">ชั่วคราว</span></th><th class="l">หุ้น</th><th class="l">เทรนด์รายวัน</th><th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th>
+    <div class="wrap"><table><tr><th>อันดับ<span class="th">ชั่วคราว</span></th><th class="l">หุ้น</th><th class="l">เทรนด์รายวัน</th><th>ราคาล่าสุด<span class="th">(% เทียบปิดวานนี้)</span></th>${ACT_TH}
     <th>ราคาตั้งซื้อ (bid)<span class="th">ต่ำกว่าราคาล่าสุด ${p.bid_ticks} ช่อง</span></th><th>ราคาเป้าขาย<span class="th">bid +${(p.take_profit * 100).toFixed(1)}%</span></th>
     <th>จากราคาต่ำสุด<span class="th">วันนี้</span></th><th></th></tr>${rows}</table></div>
     <div class="mut">คำนวณเมื่อ ${esc(p.time)} · ${shortRuleText(p.short_rule)} ${st.mode === 'all' ? 'คัดใหม่ทุกครั้งที่ราคาอัปเดต' : st.cand ? 'ผู้นำเดียวกันตั้งแต่ ' + esc(st.since) : 'ผู้นำยังไม่ผ่านเกณฑ์ยืนยัน'} · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></div>`;
@@ -424,6 +461,7 @@ async function loadSnap() {
 }
 async function loadBars() {
   try { const j = await SRD.get('bars'); BARS = j.bars || {}; $('#barsat').textContent = 'แท่งเทียนอัปเดต ' + j.time;
+        if (SNAP) $('#plan').innerHTML = planHtml();             // activity column needs the bars
         for (const s of Object.keys(CHARTS)) drawChart(s); } catch (e) {}
 }
 function setIv(n) { INTERVAL = n; store.set('sr_iv', n); document.querySelectorAll('[data-iv]').forEach(b => b.classList.toggle('on', +b.dataset.iv === n)); for (const s of Object.keys(CHARTS)) { drawChart(s); CHARTS[s].chart.timeScale().fitContent(); } }
