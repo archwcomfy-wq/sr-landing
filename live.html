@@ -38,7 +38,7 @@ a{color:var(--acc)}ul{padding-left:18px;margin:4px 0}li{margin:3px 0}
 .lv-red{border-left-color:var(--neg)}.lv-red .lvchip,.lvchip.lv-red{background:var(--neg);color:#fff}.lv-amber{border-left-color:#d4a017}.lv-amber .lvchip,.lvchip.lv-amber{background:#f2c230;color:#3a2c00}
 .lv-green{border-left-color:var(--pos)}.lv-green .lvchip,.lvchip.lv-green{background:var(--pos);color:#fff}.lvnote{margin-top:6px;font-size:13px;color:var(--warnfg)}
 .okbar .lvchip{margin-left:8px}
-.tchip{display:inline-block;font-size:12px;padding:1px 7px;border-radius:999px;white-space:nowrap}.tchip.tg{background:var(--chip);color:var(--pos);font-weight:600}.tchip.tb{background:var(--warnbg);color:var(--warnfg)}
+.tchip{display:inline-block;font-size:12px;padding:1px 7px;border-radius:999px;white-space:nowrap}.tchip.tg{background:var(--chip);color:var(--pos);font-weight:600}.tchip.tb{background:var(--warnbg);color:var(--warnfg)}.tchip.tn{background:var(--chip);color:var(--mut)}.fsel label{white-space:nowrap;margin-left:8px}
 h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(--acc)}
 :root{--warnbg:#fff8e1;--warnfg:#8a6100}@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--warnbg:#2e2711;--warnfg:#f2c230}}:root[data-theme=dark]{--warnbg:#2e2711;--warnfg:#f2c230}.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
 .lhead{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,440px);gap:12px;align-items:start}.lhead-l{min-width:0}
@@ -57,7 +57,7 @@ h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(
  <span class="mut" id="barsat"></span></div>
 <div class="mut">เส้นน้ำเงิน EMA9 · ส้ม EMA21 · ม่วงประ VWAP · เส้นประน้ำเงิน = bid · เขียว = เป้าขาย · เทา = ราคาปิดวานนี้ · แท่งสุดท้ายขยับตามราคาล่าสุดทุก 5 วินาที · กด "กราฟ" ที่หุ้นตัวไหนก็ได้เพื่อเพิ่มการ์ด</div>
 <div class="chartgrid" id="cards"></div>
-<h2>หุ้นแรงกว่า SET (ทุกตัวที่ติดตาม) <label class="mut" style="font-size:13px;font-weight:400"><input type="checkbox" id="onlyup"> แสดงเฉพาะขาขึ้น</label></h2><div class="card" id="scan"></div>
+<h2>หุ้นแรงกว่า SET (ทุกตัวที่ติดตาม) <span class="mut fsel" style="font-size:13px;font-weight:400">เฉพาะขาขึ้นตาม: <label><input type="checkbox" id="onlyup"> SMA รายวัน (เดิม)</label><label><input type="checkbox" id="onlyha"> Heikin Ashi รายสัปดาห์</label></span></h2><div class="card" id="scan"></div>
 <div class="cols"><div><h2>กลุ่ม</h2><div class="card" id="groups"></div></div><div><h2>หุ้นในกลุ่ม (กดชื่อกลุ่มเพื่อเปลี่ยน)</h2><div class="card" id="gstocks"></div></div></div>
 <div class="mut">งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></main><script>
 const REFRESH = 5 * 1000;
@@ -399,16 +399,27 @@ function marketHtml() {
     <div class="mut">หุ้นที่ติดตาม ${m.n} ตัว: บวก ${m.up} · ลบ ${m.down} · เฉลี่ยเท่ากันทุกตัว ${pct(m.eq_avg)}</div></div>
     <div>${S ? spark(S.series, S.prev) : ''}</div></div>${warn}</div>`;
 }
-let ONLYUP = store.get('sr_onlyup', false);
+let ONLYUP = store.get('sr_onlyup', false), ONLYHA = store.get('sr_onlyha', false);
+// weekly Heikin Ashi chip (5 Nov 2026): green = 2 completed weeks green (the HA filter), grey = just turned green / flat, warn = red
+function haChip(x) {
+  if (!x.ha) return '<span class="mut">–</span>';
+  return `<span class="tchip ${x.ha_ok ? 'tg' : x.ha.includes('แดง') ? 'tb' : 'tn'}">${esc(x.ha)}</span>`;
+}
 function strongHtml() {
   let L = SNAP.strong || [];
   if (!L.length) return scanHtml();
+  const hasHa = L.some(x => x.ha_ok != null);
   if (ONLYUP) L = L.filter(x => x.trend_ok);
-  return `<div class="wrap"><table><tr><th class="l">หุ้น</th><th class="l">กลุ่ม</th><th class="l">เทรนด์รายวัน</th><th>ราคาล่าสุด</th><th>วันนี้</th><th>แรงกว่า SET</th><th>จากราคาต่ำสุด</th><th>มูลค่า ลบ.</th><th>Pace</th><th></th></tr>` +
+  if (ONLYHA) L = L.filter(x => x.ha_ok);
+  L = L.slice(0, SNAP.strong_n || 15);
+  const fl = ONLYUP && ONLYHA ? 'ผ่านทั้ง SMA และ HA' : ONLYUP ? 'ผ่าน SMA' : ONLYHA ? 'ผ่าน HA' : '';
+  const empty = !L.length ? `<tr><td class="l mut" colspan="11">${ONLYHA && !hasHa ? 'ข้อมูล Heikin Ashi รายสัปดาห์จะเริ่มมีหลัง premarket รอบถัดไป' : 'ตอนนี้ยังไม่มีหุ้น' + fl}</td></tr>` : '';
+  return `<div class="wrap"><table><tr><th class="l">หุ้น</th><th class="l">กลุ่ม</th><th class="l">เทรนด์รายวัน (SMA)</th><th class="l">HA สัปดาห์</th><th>ราคาล่าสุด</th><th>วันนี้</th><th>แรงกว่า SET</th><th>จากราคาต่ำสุด</th><th>มูลค่า ลบ.</th><th>Pace</th><th></th></tr>` +
     L.map(x => `<tr><td class="l"><b>${esc(x.symbol)}</b>${x.tradable ? '' : ' <span class="mut">(สภาพคล่องต่ำ)</span>'}</td><td class="l mut">${esc(x.code)}</td>
-      <td class="l">${trendChip(x.trend, x.trend_ok)}</td><td>${num(x.last)}</td><td>${pct(x.chg)}</td><td><b>${pct(x.rs)}</b></td><td>${pct(x.from_low)}</td>
-      <td>${num(x.value_mb, 1)}</td><td>${x.pace == null ? '–' : num(x.pace, 1)}</td><td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`).join('') +
-    `</table></div><div class="mut">หุ้นทุกตัวที่ระบบติดตาม (กลุ่ม 104 ตัว + นอกกลุ่ม ${SNAP.scan_n ?? ''} ตัว เช่น AOT BANPU) เรียงตาม "แรงกว่า SET" = % วันนี้ ลบ % ของ SET · เขียว = ขาขึ้นผ่านเกณฑ์ (ราคาปิด > ${MA()}20 > ${MA()}50, ${MA()}20 ชี้ขึ้น) ·
+      <td class="l">${trendChip(x.trend, x.trend_ok)}</td><td class="l">${haChip(x)}</td><td>${num(x.last)}</td><td>${pct(x.chg)}</td><td><b>${pct(x.rs)}</b></td><td>${pct(x.from_low)}</td>
+      <td>${num(x.value_mb, 1)}</td><td>${x.pace == null ? '–' : num(x.pace, 1)}</td><td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`).join('') + empty +
+    `</table></div><div class="mut">${fl ? '<b>แสดงเฉพาะหุ้นที่' + fl + '</b> (กรองจากทุกตัวก่อนตัด ' + (SNAP.strong_n || 15) + ' อันดับ) · ' : ''}หุ้นทุกตัวที่ระบบติดตาม (กลุ่ม 104 ตัว + นอกกลุ่ม ${SNAP.scan_n ?? ''} ตัว เช่น AOT BANPU) เรียงตาม "แรงกว่า SET" = % วันนี้ ลบ % ของ SET · เกณฑ์ใช้ราคาปิดวานนี้: SMA = ราคาปิด > ${MA()}20 > ${MA()}50 และ ${MA()}20 ชี้ขึ้น · HA = แท่ง Heikin Ashi รายสัปดาห์เขียว 2 สัปดาห์ติด (เฉพาะสัปดาห์ที่จบแล้ว สีไม่เปลี่ยนระหว่างสัปดาห์) · ติ๊กทั้งสองช่อง = ต้องผ่านทั้งคู่ ·
+    ทดสอบ มี.ค. 64–พ.ย. 69 (ซื้อที่ราคาเปิด เป้า +1.5% ถ้าไม่ถึงถือต่อได้ถึง 10 วัน): หุ้นที่ผ่านทั้งสองเกณฑ์ดีกว่าหุ้นที่ผ่าน SMA อย่างเดียว +0.2% ต่อรายการ แต่ยังน้อยกว่าค่าซื้อขายไปกลับ 0.34% และราว 1 ใน 3 ของรายการลงถึง −3% ก่อนถึงเป้า ·
     ใช้ดูเท่านั้น ไม่ใช่แผน: ทดสอบ 62 วัน การซื้อ 5 ตัวที่แรงสุดตามตารางนี้ (เฉพาะขาขึ้น) ไม่ได้กำไร ตอน 10:05 แตะ bid −0.05% / ช่วงบ่าย 14:05 +0.03% ต่อรายการ ก่อนหักผลที่ซื้อไม่ได้คิว · หุ้นนอกกลุ่มดึงราคาทุก ~90 วินาที</div>`;
 }
 function scanHtml() {
@@ -467,6 +478,7 @@ async function loadBars() {
 function setIv(n) { INTERVAL = n; store.set('sr_iv', n); document.querySelectorAll('[data-iv]').forEach(b => b.classList.toggle('on', +b.dataset.iv === n)); for (const s of Object.keys(CHARTS)) { drawChart(s); CHARTS[s].chart.timeScale().fitContent(); } }
 document.querySelectorAll('[data-iv]').forEach(b => b.addEventListener('click', () => setIv(+b.dataset.iv)));
 { const ou = document.getElementById('onlyup'); if (ou) { ou.checked = ONLYUP; ou.addEventListener('change', () => { ONLYUP = ou.checked; store.set('sr_onlyup', ONLYUP); if (SNAP) $('#scan').innerHTML = strongHtml(); }); } }
+{ const oh = document.getElementById('onlyha'); if (oh) { oh.checked = ONLYHA; oh.addEventListener('change', () => { ONLYHA = oh.checked; store.set('sr_onlyha', ONLYHA); if (SNAP) $('#scan').innerHTML = strongHtml(); }); } }
 setIv(INTERVAL);
 loadSnap(); loadBars(); loadGlobal();
 setInterval(loadSnap, REFRESH); setInterval(loadBars, 15000); setInterval(loadGlobal, 60000);
