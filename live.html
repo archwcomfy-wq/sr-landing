@@ -58,7 +58,7 @@ h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(
 <div class="mut">เส้นน้ำเงิน EMA9 · ส้ม EMA21 · ม่วงประ VWAP · เส้นประน้ำเงิน = bid · เขียว = เป้าขาย · เทา = ราคาปิดวานนี้ · แท่งสุดท้ายขยับตามราคาล่าสุดทุก 5 วินาที · กด "กราฟ" ที่หุ้นตัวไหนก็ได้เพื่อเพิ่มการ์ด</div>
 <div class="chartgrid" id="cards"></div>
 <h2>หุ้นแรงกว่า SET (ทุกตัวที่ติดตาม) <span class="mut fsel" style="font-size:13px;font-weight:400">เฉพาะขาขึ้นตาม: <label><input type="checkbox" id="onlyup"> SMA รายวัน (เดิม)</label><label><input type="checkbox" id="onlyha"> Heikin Ashi รายสัปดาห์</label></span></h2><div class="card" id="scan"></div>
-<div class="cols"><div><h2>กลุ่ม</h2><div class="card" id="groups"></div></div><div><h2>หุ้นในกลุ่ม (กดชื่อกลุ่มเพื่อเปลี่ยน)</h2><div class="card" id="gstocks"></div></div></div>
+<div class="cols"><div><h2>กลุ่ม</h2><div class="card" id="groups"></div></div><div><h2>หุ้นในกลุ่ม (กดชื่อกลุ่มเพื่อเปลี่ยน)</h2><div class="card" id="gstocks"></div><h2>Pace สูงสุด 10 อันดับ (ทุกกลุ่ม)</h2><div class="card" id="pacetop"></div></div></div>
 <div class="mut">งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></main><script>
 const REFRESH = 5 * 1000;
 // data source: local files served by sr_server.py, or (online page) window.SR_DATA reading Supabase
@@ -451,6 +451,20 @@ function groupStocksHtml() {
     g.stocks.map(s => `<tr><td class="l"><b>${esc(s.symbol)}</b>${s.tradable ? '' : ' <span class="mut">(สภาพคล่องต่ำ)</span>'}</td><td>${num(s.last)}</td><td>${pct(s.chg)}</td><td>${num(s.low)}</td>
       <td>${pct(s.from_low)}</td><td>${num(s.value_mb, 1)}</td><td>${s.pace == null ? '–' : num(s.pace, 1)}</td><td><button class="mini" onclick="addExtra('${s.symbol}')">กราฟ</button></td></tr>`).join('') + '</table></div>';
 }
+// 6 Nov 2026: the most active stocks by pace, all groups mixed (snap.pace_top from live_monitor; older snapshots: groups + shown watch list)
+function paceHtml() {
+  let L = SNAP.pace_top;
+  if (!L) {
+    L = SNAP.groups.flatMap(g => g.stocks.map(s => ({...s, code: g.code}))).concat((SNAP.scan || []).map(s => ({...s, code: 'นอกกลุ่ม'})))
+      .filter(s => s.pace != null).sort((a, b) => b.pace - a.pace).slice(0, 10);
+  }
+  if (!L.length) return '<span class="mut">ยังไม่มี Pace (รอตลาดเปิดและมีการซื้อขาย)</span>';
+  return `<div class="wrap"><table class="pacet"><tr><th>#</th><th class="l">หุ้น (กลุ่ม)</th><th>ล่าสุด</th><th>วันนี้</th><th>Pace</th><th>มูลค่า ลบ.</th></tr>` +
+    L.map((s, i) => `<tr><td>${i + 1}</td><td class="l" style="white-space:nowrap"><a href="#" onclick="addExtra('${s.symbol}');return false" title="เพิ่มกราฟ"><b>${esc(s.symbol)}</b></a>${s.tradable === false ? '°' : ''} <span class="mut" style="font-size:12px">(${esc(s.code)})</span></td>
+      <td>${num(s.last)}</td><td>${pct(s.chg)}</td><td><b>${num(s.pace, 1)}</b></td><td>${num(s.value_mb, 1)}</td></tr>`).join('') +
+    `</table></div><div class="mut">กดชื่อหุ้นเพื่อเพิ่มกราฟ · ° = สภาพคล่องต่ำ · Pace = มูลค่าซื้อขายถึงตอนนี้ ÷ มูลค่าที่ปกติซื้อขายถึงเวลาเดียวกัน (เฉลี่ย 60 วัน) · 1.0 = ปกติ · 2.0 = คึกกว่าปกติ 2 เท่า ·
+    Pace บอกความคึก ไม่บอกทิศทาง ขายหนักก็ทำให้ Pace สูงได้ ดู % วันนี้ประกอบ · ตัวที่มูลค่าเฉลี่ยต่ำ Pace พุ่งได้ง่าย ดูมูลค่าประกอบ</div>`;
+}
 
 async function loadSnap() {
   try {
@@ -467,6 +481,7 @@ async function loadSnap() {
     $('#plan').innerHTML = planHtml();
     $('#groups').innerHTML = groupsHtml();
     $('#gstocks').innerHTML = groupStocksHtml();
+    { const pt = document.getElementById('pacetop'); if (pt) pt.innerHTML = paceHtml(); }
     renderCards();
   } catch (e) { $('#feed').textContent = 'รอข้อมูลจาก live_monitor…'; }
 }
