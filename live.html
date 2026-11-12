@@ -269,6 +269,9 @@ function globalHtml() {
       "คาดเปิด" = แบบจำลองจากข้อมูลย้อนหลัง อธิบาย gap ได้ราว 10–24% แล้วแต่กลุ่ม (แสดงเฉพาะกลุ่มที่ ≥ 10%)</div></details>
     ${news}`;
 }
+// 13 Nov 2026 (system review): the morning plan follows the live ranking after the open; the pre-market radar is background only
+const AM_NOTE = s => `<div class="mut" style="margin:-2px 0 6px">แผนเช้าใช้<b>อันดับ live หลังตลาดเปิด</b>เท่านั้น: ประกาศทางการ ${esc(s.start || '10:05')} และติดตามกลุ่มนำใหม่ถึง ${esc(s.cancel || '11:00')} (อันดับเรดาร์ก่อนเปิดไม่ได้ใช้: ผลจริง 26 วันไม่สัมพันธ์กับอันดับจริง) ·
+  <b>แผนนี้ขายในวัน</b>: ผลจริง 6 ต.ค.–12 พ.ย. ถือข้ามวันแล้วแย่ลง (ขายในวัน +0.30% → ถือ 3 วัน +0.13% → 5 วัน −0.23% → 10 วัน −1.6% ต่อรายการ) ถ้าจะถือหลายวันให้ใช้ <a href="#swing">แผนถือหลายวัน</a> ด้านล่าง</div>`;
 function planHtml() {
   const plans = SNAP.plans || [], cur = SNAP.session || 'am';
   const S = SNAP.sessions || {am: {name: 'ช่วงเช้า (Open1)', start: '10:05', cancel: '11:00', tp: 0.015}, pm: {name: 'ช่วงบ่าย (Open2)', start: '14:05', cancel: '15:00', tp: 0.01, pre_from: '13:30'}};
@@ -282,10 +285,10 @@ function planHtml() {
     const pv = SNAP.provisional && (SNAP.provisional.session || 'am') === k ? provisionalHtml() : '';
     const official = plans.filter(p => p.kind !== 'ato' && (p.session || 'am') === k).slice().reverse().map(planCard);
     const empty = k === 'am'
-      ? '<div class="card mut">แผนชั่วคราวขึ้นเมื่อตลาดมีราคา · แผนทางการขึ้นเมื่อผ่านเกณฑ์ประกาศเร็ว หรือถึง ' + esc(s.start) + ' และมีกลุ่มที่ยืนยันแล้ว</div>'
+      ? '<div class="card mut">แผนชั่วคราวขึ้นเมื่อตลาดมีราคา · แผนทางการขึ้นเมื่อ' + ((SNAP.early || {}).enabled === false ? '' : 'ผ่านเกณฑ์ประกาศเร็ว หรือ') + 'ถึง ' + esc(s.start) + ' และมีกลุ่มที่ยืนยันแล้ว</div>'
       : `<div class="card mut">${cur === 'am' ? 'ยังไม่ถึงช่วงบ่าย: ' : ''}แผนชั่วคราวช่วงบ่ายเริ่ม ${esc(s.pre_from || '13:30')} (ราคาคาดการณ์ก่อนเปิด) · ตลาดเปิดภาคบ่ายราว 13:55–14:00 · แผนทางการเมื่อผ่านเกณฑ์ประกาศเร็ว หรือ ${esc(s.start)}</div>`;
     out.push(`<h2 class="sess ${k === cur ? 'cur' : ''}">${esc(s.name || k)} <span class="mut">· เป้าขาย +${((s.tp || 0) * 100).toFixed(1)}% · ยกเลิกถ้าไม่ได้ของภายใน ${esc(s.cancel || '')}${k === cur ? ' · ช่วงปัจจุบัน' : ''}</span></h2>` +
-      (pv + cards.join('') + official.join('') || empty));
+      (k === 'am' ? AM_NOTE(s) : '') + (pv + cards.join('') + official.join('') || empty));
   }
   return out.join('');
 }
@@ -361,7 +364,7 @@ function provisionalHtml() {
   const st = p.status || {}, ck = st.checks || [];
   const head = `<div class="warnbar">⚠ ยังไม่ยืนยัน · แผนชั่วคราว${p.session === 'pm' ? 'ช่วงบ่าย' : ''} (ไม่เป็นทางการ)${p.mode === 'all' ? ' · คัดจากหุ้นทุกตัวที่ติดตาม' : p.code ? ' · กลุ่มนำชั่วคราว: <b>' + esc(p.code) + '</b>' : ''}${p.projected ? ' · ราคาคาดการณ์ก่อนเปิด' : ''}${mktChip(SNAP.market, true)}</div>`;
   const note = `<div class="warnnote">กลุ่มและหุ้นในตารางนี้เปลี่ยนได้ทุก ${REFRESH / 1000} วินาทีตามอันดับล่าสุด ราคา bid และราคาเป้าขายคิดจากราคาล่าสุดด้วยกฎเดียวกับแผนทางการ ·
-    ${p.mode === 'all' ? 'ช่วงบ่ายคัดจากหุ้นทุกตัว (ในกลุ่ม + นอกกลุ่ม) ให้คะแนนเพิ่มถ้าอยู่ในกลุ่มที่ยืนยันแล้ว ประกาศทางการตอน ' + esc(st.scheduled || '14:05') + ' หลังตลาดเปิดภาคบ่าย' : p.confirmed_group ? 'กลุ่มนี้ผ่านเกณฑ์ยืนยันเดิมแล้ว รอเกณฑ์ประกาศเร็วหรือเวลา ' + esc(st.scheduled || '10:05') : ((p.skipped || []).length ? 'กลุ่มนี้ยังไม่ผ่านเกณฑ์ยืนยัน (แสดงกลุ่มถัดไปที่มีหุ้นผ่านเกณฑ์)' : 'กลุ่มนี้ยังไม่ผ่านเกณฑ์ยืนยัน (แสดงอันดับ 1 ขณะนี้)')} ·
+    ${p.mode === 'all' ? 'ช่วงบ่ายคัดจากหุ้นทุกตัว (ในกลุ่ม + นอกกลุ่ม) ให้คะแนนเพิ่มถ้าอยู่ในกลุ่มที่ยืนยันแล้ว ประกาศทางการตอน ' + esc(st.scheduled || '14:05') + ' หลังตลาดเปิดภาคบ่าย' : p.confirmed_group ? 'กลุ่มนี้ผ่านเกณฑ์ยืนยันเดิมแล้ว รอ' + (st.enabled === false ? '' : 'เกณฑ์ประกาศเร็วหรือ') + 'เวลา ' + esc(st.scheduled || '10:05') : ((p.skipped || []).length ? 'กลุ่มนี้ยังไม่ผ่านเกณฑ์ยืนยัน (แสดงกลุ่มถัดไปที่มีหุ้นผ่านเกณฑ์)' : 'กลุ่มนี้ยังไม่ผ่านเกณฑ์ยืนยัน (แสดงอันดับ 1 ขณะนี้)')} ·
     ถ้าจะซื้อก่อนยืนยันเป็นการตัดสินใจของคุณเอง${(p.skipped || []).length ? ' · <b>ข้าม ' + esc(p.skipped.join(', ')) + '</b>: ไม่มีหุ้นผ่านเกณฑ์ (ขาขึ้น / สภาพคล่อง / บวกวันนี้)' : ''}</div>`;
   const checks = `<div class="checks">` + ck.map(c => `<span class="ck ${c.ok ? 'y' : 'n'}">${c.ok ? '✓' : '✗'} ${esc(c.label)} <span class="mut">(${esc(c.detail)})</span></span>`).join('') +
     (st.mode === 'all' ? '' : `<span class="ck">${st.cand && (p.skipped || []).includes(st.cand) ? '<b>' + esc(st.cand) + ' ผ่านเกณฑ์ประกาศ แต่ไม่มีหุ้นขาขึ้นให้แนะนำ จึงไม่ประกาศแผนของกลุ่มนี้</b> · ' : ''}${st.enabled === false ? 'ปิดการประกาศเร็วไว้ (config)' : 'ครบทุกข้อและมีหุ้นผ่านเกณฑ์ = ประกาศแผนทางการทันที'} · ไม่ครบ = ประกาศตามเวลา ${esc(st.scheduled || '10:05')} ด้วยเกณฑ์เดิม</span>`) + `</div>`;
@@ -451,9 +454,9 @@ function mktChip(m, now) {
 }
 function groupsHtml() {
   const g = SNAP.groups;
-  return `<div class="wrap"><table><tr><th>#</th><th class="l">กลุ่ม</th><th>เฉลี่ย</th><th>บวก</th><th>Pace</th><th>เช้า</th><th></th></tr>` +
+  return `<div class="wrap"><table><tr><th>#</th><th class="l">กลุ่ม</th><th>เฉลี่ย</th><th>บวก</th><th>Pace</th><th class="mut" style="font-weight:400" title="อันดับเรดาร์ก่อนเปิด: ข้อมูลประกอบ ผลจริง 26 วันไม่สัมพันธ์กับอันดับจริงของวัน">ก่อนเปิด</th><th></th></tr>` +
     g.map(x => `<tr class="${x.confirmed ? 'top' : ''}"><td>${x.live_rank}</td><td class="l"><a href="#" onclick="showGroup('${x.code}');return false"><b>${esc(x.code)}</b></a></td>
-      <td>${pct(x.chg)}</td><td>${x.n_up}/${x.n}</td><td>${x.pace == null ? '–' : num(x.pace, 1)}</td><td>${x.pre_rank ?? ''}</td><td>${x.confirmed ? '✓' : ''}</td></tr>`).join('') + '</table></div>';
+      <td>${pct(x.chg)}</td><td>${x.n_up}/${x.n}</td><td>${x.pace == null ? '–' : num(x.pace, 1)}</td><td class="mut" style="font-size:12px">${x.pre_rank ?? ''}</td><td>${x.confirmed ? '✓' : ''}</td></tr>`).join('') + '</table></div>';
 }
 let GROUP = store.get('sr_group', null);
 function showGroup(code) { GROUP = code; store.set('sr_group', code); $('#gstocks').innerHTML = groupStocksHtml(); }
@@ -517,22 +520,33 @@ function swingHtml() {
   if (S === undefined) return '<span class="mut">แผนถือหลายวันเริ่มแสดงหลัง premarket รอบถัดไป</span>';
   if (!S) return '<span class="mut">วันนี้ไม่มีข้อมูลแผนถือหลายวัน</span>';
   const p0 = v => v == null ? '–' : Math.round(v * 100) + '%', dm = d => d ? `${+d.slice(8, 10)}/${+d.slice(5, 7)}` : '';
-  const R = S.rule || {}, cost = R.cost || 0.0017, hold = R.hold || 10;
+  const R = S.rule || {}, cost = R.cost || 0.0017, hold = R.hold || 10, maxb = R.max_bids || 5;
   const tchip = t => t === 'A' ? '<span class="tchip tg">ระดับ A</span>' : '<span class="tchip tn">ระดับ B</span>';
-  const tdesc = t => t === 'A' ? 'ระดับ A (ตลาดถูกขายทั้งกระดาน: สถิติดีกว่า)' : 'ระดับ B (ย่อเฉพาะตัว: สถิติไม่ชัด)';
+  const tdesc = t => t === 'A' ? 'ตลาดถูกขายทั้งกระดาน (ระดับ A: สถิติดีกว่า)' : 'ย่อเฉพาะตัว (ระดับ B: สถิติอ่อนกว่า)';
   const nm = r => `<a href="#" onclick="addExtra('${r.symbol}');return false"><b>${esc(r.symbol)}</b></a> <span class="mut" style="font-size:12px">(${esc(r.code || '')})</span>`;
+  const sec = r => r.sec_n ? `${r.sec_low}/${r.sec_n}` : '<span class="mut">–</span>';
+  const secLine = a => (a || []).slice(0, 6).map(x => `${esc(x.code)} ${x.low}/${x.n}`).join(' · ');
+  const stepTxt = n => n == null ? '' : ` <span class="mut" style="font-size:12px">−${n} ช่อง</span>`;
   const L = S.live || {};
-  let o = `<div style="margin-bottom:6px">ณ ปิด ${dm(S.asof)}: หุ้นที่ย่อแรงพร้อมกัน <b>${p0(S.breadth)}</b> ของ ${S.n_univ || ''} ตัว → <b>${tdesc(S.tier)}</b>` +
+  let o = `<div style="margin-bottom:4px">ราคาปิด ${dm(S.asof)}: หุ้นที่ติดตามย่อแรงพร้อมกัน <b>${p0(S.breadth)}</b> ของ ${S.n_univ || ''} ตัว → <b>${tdesc(S.tier)}</b>` +
     (L.breadth == null ? '' : ` · <span class="mut">ตอนนี้ ${p0(L.breadth)} ถ้าปิดแบบนี้เป็นระดับ ${L.tier}</span>`) + '</div>';
-  // 1) today's limit orders
-  const C = S.cands || [];
-  o += `<p style="margin:6px 0 4px"><b>ตั้งซื้อวันนี้</b> <span class="mut">สัญญาณจากราคาปิด ${dm(S.asof)} · ใช้ได้วันนี้วันเดียว · ไม่ถึงราคาไม่ต้องไล่ซื้อ</span></p>`;
+  if ((S.sectors || []).length || (L.sectors || []).length) o += `<div class="mut" style="margin-bottom:6px">กลุ่มที่ย่อแรงพร้อมกัน (ตัวที่ย่อ/ทั้งกลุ่ม): ${secLine(S.sectors) || '–'}` +
+    ((L.sectors || []).length ? ` · <b>ตอนนี้</b> ${secLine(L.sectors)}` : '') + '</div>';
+  // 1) today's limit orders: the short list first
+  const C = S.cands || [], np = C.filter(r => r.pick !== false).length;
+  o += `<p style="margin:6px 0 4px"><b>ตั้งซื้อวันนี้</b> <span class="mut">สัญญาณจากราคาปิด ${dm(S.asof)} · ตั้งเช้านี้ ใช้ได้วันนี้วันเดียว · ไม่ถึงราคาไม่ต้องไล่ซื้อ · รายการหลักไม่เกิน ${maxb} ตัว กลุ่มละ 1 ตัว เรียงจากขาขึ้นยาวแรงสุด</span></p>`;
   if (!C.length) o += '<div class="mut">วันนี้ไม่มีหุ้นเข้าเกณฑ์</div>';
-  else o += `<div class="wrap"><table><tr><th class="l">หุ้น (กลุ่ม)</th><th class="l">ระดับ</th><th>RSI2</th><th>ปิดวานนี้</th><th>ตั้งซื้อ</th><th>ตั้งซื้อลึก</th><th>ต่ำสุดวันนี้</th><th>ล่าสุด</th><th class="l">สถานะ</th></tr>` +
-    C.map(r => `<tr><td class="l" style="white-space:nowrap">${nm(r)}</td><td class="l">${tchip(r.tier)}</td><td>${num(r.rsi2, 1)}</td><td>${num(r.sig_close)}</td><td><b>${num(r.bid)}</b></td><td>${num(r.bid2)}</td>
-      <td>${r.low == null ? '–' : num(r.low)}</td><td>${r.last == null ? '–' : num(r.last)}</td>
-      <td class="l">${r.hit ? '<b class="pos">ถึงราคาตั้งซื้อแล้ว</b>' : r.last == null || r.bid == null ? '<span class="mut">–</span>' : `<span class="mut">ยังไม่ถึง (ห่าง ${((r.last / r.bid - 1) * 100).toFixed(1)}%)</span>`}${r.held ? ' <span class="mut">· ถืออยู่แล้ว (สัญญาณซ้ำ)</span>' : ''}</td></tr>`).join('') + '</table></div>';
-  if ((S.unfilled || []).length) o += `<div class="mut" style="margin-top:4px">เมื่อวานตั้งซื้อแล้วราคาไม่ลงถึง: ${S.unfilled.map(u => esc(u.symbol) + ' ' + num(u.bid)).join(' · ')}</div>`;
+  else o += `<div class="wrap"><table><tr><th>#</th><th class="l">หุ้น (กลุ่ม)</th><th>ปิด ${dm(S.asof)}</th>
+      <th>ตั้งซื้อ<span class="th">ต่ำกว่าราคาปิด</span></th><th>ตั้งซื้อลึก</th><th>ต่ำสุดวันนี้</th><th>ล่าสุด</th><th>กลุ่มย่อ<span class="th">ตัวที่ย่อ/ทั้งกลุ่ม</span></th><th>เหนือเส้น<span class="th">100 วัน</span></th><th class="l">สถานะ</th></tr>` +
+    C.map(r => { const main = r.pick !== false;
+      const why = main ? '' : r.why === 'held' ? 'ถืออยู่แล้ว (สัญญาณซ้ำ) ไม่ตั้งเพิ่ม' : r.why === 'sector' ? `สำรอง: กลุ่มเดียวกับ ${esc(r.with_ || '')}` : `สำรอง: เกิน ${maxb} ตัว`;
+      const stt = r.hit ? '<b class="pos">ถึงราคาตั้งซื้อแล้ว</b>' : r.last == null || r.bid == null ? '' : `<span class="mut">ยังไม่ถึง (ห่าง ${((r.last / r.bid - 1) * 100).toFixed(1)}%)</span>`;
+      return `<tr${main ? '' : ' style="opacity:.6"'} title="RSI 2 วัน ${num(r.rsi2, 1)}"><td>${main ? '<b>' + (r.rank || '') + '</b>' : '–'}</td><td class="l" style="white-space:nowrap">${nm(r)}</td><td>${num(r.sig_close)}</td>
+        <td style="white-space:nowrap"><b>${num(r.bid)}</b>${stepTxt(r.ticks)}</td><td style="white-space:nowrap">${num(r.bid2)}${stepTxt(r.ticks2)}</td>
+        <td>${r.low == null ? '–' : num(r.low)}</td><td>${r.last == null ? '–' : num(r.last)}</td><td>${sec(r)}</td><td>${r.d100 == null ? '–' : pct(r.d100, 1)}</td>
+        <td class="l">${[why ? '<span class="mut">' + why + '</span>' : '', stt, main && r.held ? '<span class="mut">ถืออยู่แล้ว (สัญญาณซ้ำ)</span>' : ''].filter(Boolean).join(' · ') || '<span class="mut">–</span>'}</td></tr>`; }).join('') + '</table></div>' +
+    (np < C.length ? `<div class="mut" style="margin-top:3px">แถวสีจาง = สำรองหรือถืออยู่แล้ว · หุ้นกลุ่มเดียวกันมักได้ของและขึ้นลงพร้อมกัน จึงนับเป็นการเสี่ยงก้อนเดียว</div>` : '');
+  if ((S.unfilled || []).length) o += `<div class="mut" style="margin-top:4px">วันทำการก่อนหน้าตั้งซื้อแล้วราคาไม่ลงถึง: ${S.unfilled.map(u => esc(u.symbol) + ' ' + num(u.bid)).join(' · ')}</div>`;
   // 2) ideas still held
   const T = (S.tracker || []).filter(r => r.status === 'open'), D = (S.tracker || []).filter(r => r.status === 'closed');
   o += `<p style="margin:10px 0 4px"><b>ถืออยู่ตามแผน</b> <span class="mut">ขายที่ราคาปิดของวันแรกที่ปิดเหนือค่าเฉลี่ย 5 วัน หรือครบ ${hold} วัน</span></p>`;
@@ -544,12 +558,17 @@ function swingHtml() {
         <td>${px == null ? '–' : num(px)}</td><td>${pct(r.chg)}</td><td><b>${pct(ret)}</b></td><td class="l" style="white-space:nowrap">${sell}</td></tr>`; }).join('') + '</table></div>';
   if (D.length) o += `<div class="mut" style="margin-top:4px">ปิดแล้วใน 5 วันทำการล่าสุด: ${D.map(r => `${esc(r.symbol)} ${pct(r.ret, 1)} (${r.days} วัน)`).join(' · ')}</div>`;
   // 3) provisional new signals at the current prices
-  if (L.prov) o += `<p style="margin:10px 0 4px"><b>สัญญาณใหม่ถ้าปิดที่ราคาตอนนี้</b> <span class="mut">ชั่วคราว ยืนยันเมื่อปิดตลาด (หลัง 16:00 ตรงกับราคาปิดราว 9 ใน 10) · ${L.n_prov || 0} ตัว</span></p>` +
-    (L.prov.length ? '<div>' + L.prov.map(r => `${nm(r)} <span class="mut" style="font-size:12px">RSI2 ${num(r.rsi2, 1)}</span> ${pct(r.chg, 1)}`).join(' · ') + '</div>' : '<div class="mut">ยังไม่มี</div>');
-  return o + `<div class="mut" style="margin-top:8px">เกณฑ์: ราคาปิด &gt; ค่าเฉลี่ย 100 วัน, ค่าเฉลี่ย 50 วัน &gt; 100 วัน (ขาขึ้นระยะยาว) และ RSI 2 วัน &lt; 10 (ย่อแรงระยะสั้น) · ตั้งซื้อ = ราคาปิด − 0.25 เท่าของ ATR 14 วัน (ลึก = − 0.5 เท่า) ·
-    ระดับ A = วันนั้นหุ้นที่ติดตามตั้งแต่ 20% ขึ้นไปมี RSI2 &lt; 10 · ไม่ใช้จุดตัดขาดทุนตามราคา (ทดสอบแล้วทำให้ผลแย่ลง) ความเสี่ยงคุมด้วยขนาดไม้ ·
-    ทดสอบ ก.ค. 64–ต.ค. 69 หักค่าซื้อขายแล้ว ต่อรายการที่ได้ของ: <b>ระดับ A</b> +0.2% ถึง +0.6% (2564–67) และ +1.0% ถึง +1.3% (2568–69) ชนะ 63–73% กำไรเฉลี่ย +3% ขาดทุนเฉลี่ย −3.6% ถือเฉลี่ย 4–5 วัน ได้ของราวครึ่งหนึ่งของที่ตั้ง ·
-    <b>ระดับ B</b> −0.2% ถึง +0.2% และ +0.4% ถึง +0.6% · รายการที่แย่สุด 1 ใน 20 ขาดทุนราว −6% ถึง −7% และ 1 ใน 100 ราว −14% มักเกิดพร้อมกันในกลุ่มเดียว · ถือ 20 วันไม่ได้ดีกว่า · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div>`;
+  if (L.prov) o += `<p style="margin:10px 0 4px"><b>สัญญาณใหม่ถ้าปิดที่ราคาตอนนี้</b> <span class="mut">ชั่วคราว ยืนยันเมื่อปิดตลาด (หลัง 16:00 ตรงกับราคาปิดราว 9 ใน 10) · ${L.n_prov || 0} ตัว · รายการตั้งซื้อจริงออกเช้าวันทำการถัดไป</span></p>` +
+    (L.prov.length ? '<div>' + L.prov.map(r => `${nm(r)} <span class="mut" style="font-size:12px">RSI2 ${num(r.rsi2, 1)}${r.sec_n ? ' · กลุ่มย่อ ' + r.sec_low + '/' + r.sec_n : ''}</span> ${pct(r.chg, 1)}`).join(' · ') + '</div>' : '<div class="mut">ยังไม่มี</div>');
+  return o + `<div class="mut" style="margin-top:8px"><b>อ่านตาราง:</b> ราคาในช่อง "ตั้งซื้อ" คือราคาที่ใช้ตั้ง bid เช้านี้ได้เลย คิดจากราคาปิดวันทำการก่อนหน้า ลบหนึ่งในสี่ของช่วงแกว่งเฉลี่ยต่อวันของหุ้นตัวนั้น (ATR 14 วัน) แล้วปัดลงตามช่องราคา
+    หุ้นแกว่งน้อยจึงต่ำกว่าราคาปิด 1 ช่อง หุ้นแกว่งมาก 3–4 ช่อง ("ลึก" = ครึ่งหนึ่งของช่วงแกว่ง) · ถ้าถึงสิ้นวันไม่ได้ของให้ยกเลิก ·
+    <b>เกณฑ์:</b> ราคาปิด &gt; ค่าเฉลี่ย 100 วัน, ค่าเฉลี่ย 50 วัน &gt; 100 วัน (ขาขึ้นระยะยาว) และ RSI 2 วัน &lt; 10 (ย่อแรงระยะสั้น) · ระดับ A = วันนั้นหุ้นที่ติดตามตั้งแต่ 20% ขึ้นไปย่อแรงพร้อมกัน ·
+    <b>การคัด ${maxb} ตัว:</b> วันที่มีเกิน 5 ตัว (ราว 10 วันต่อปี) การเรียงตามขาขึ้นยาวได้ +0.8% / +1.1% ต่อรายการ เทียบกับทุกตัว +0.4% / +1.2% (2564–67 / 2568–69) ได้เปรียบเล็กน้อยและไม่แน่นอนรายปี ·
+    หุ้นกลุ่มเดียวกันที่ได้ของวันเดียวกันให้ผลไปทางเดียวกันมากกว่าต่างกลุ่ม (สหสัมพันธ์ 0.37 เทียบ 0.11) จึงจำกัดกลุ่มละ 1 ตัว ·
+    "กลุ่มย่อ" เป็นข้อมูลประกอบ: ทั้งกลุ่มย่อพร้อมกันให้ผลแย่กว่าในปี 2564–67 (−0.1% เทียบ +0.2%) แต่ดีกว่าในปี 2568–69 (+1.2% เทียบ +0.4%) จึงไม่ใช้เป็นกฎ ·
+    ไม่ใช้จุดตัดขาดทุนตามราคา และเป้าขายตายตัว +3% / +5% / +8% ไม่ได้ดีกว่าการขายเมื่อปิดเหนือค่าเฉลี่ย 5 วัน ความเสี่ยงคุมด้วยขนาดไม้ ·
+    <b>สถิติ</b> ก.ค. 64–ต.ค. 69 หักค่าซื้อขายแล้ว ต่อรายการที่ได้ของ: ระดับ A +0.2% ถึง +0.6% (2564–67) และ +1.0% ถึง +1.3% (2568–69) ชนะ 63–73% กำไรเฉลี่ย +3% ขาดทุนเฉลี่ย −3.6% ถือเฉลี่ย 4–5 วัน
+    ตั้ง 4–5 ตัวได้ของเฉลี่ยราว 2 ตัว · ระดับ B −0.2% ถึง +0.2% และ +0.4% ถึง +0.6% · รายการที่แย่สุด 1 ใน 20 ขาดทุนราว −6% ถึง −7% และ 1 ใน 100 ราว −14% · ถือ 20 วันไม่ได้ดีกว่า · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div>`;
 }
 
 // 6 Nov 2026: the most active stocks by pace, all groups mixed (snap.pace_top from live_monitor; older snapshots: groups + shown watch list)
