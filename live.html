@@ -52,6 +52,8 @@ h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(
 <div class="card"><b>ยืนยันแล้ว:</b> <span id="alerts"></span></div></div>
 <aside class="card gcue" id="global" aria-label="สัญญาณจากต่างประเทศ"><span class="mut">กำลังโหลดสัญญาณต่างประเทศ…</span></aside></div>
 <div id="plan"></div>
+<h2>แผนถือหลายวัน: ซื้อย่อในขาขึ้น <span class="mut" style="font-size:13px;font-weight:400">ทดลอง · คนละแผนกับแผนขายในวันด้านบน</span></h2>
+<div class="card" id="swing"></div>
 <h2>กราฟแท่งเทียน</h2>
 <div class="ivbar">ช่วงแท่ง: <button data-iv="1">1 นาที</button> <button data-iv="3">3 นาที</button> <button data-iv="5">5 นาที</button> <button data-iv="15">15 นาที</button>
  <span class="mut" id="barsat"></span></div>
@@ -509,6 +511,47 @@ function earnHtml() {
     และหุ้นที่โบรกติดตามมากอาจขยับต่างจากนี้มาก เช่น HANA 12 พ.ย. ผลทางสถิติแค่ดีกว่าคาดเล็กน้อย แต่ราคา +20% เพราะกำไรเกินประมาณการโบรก · งบที่ออกหลัง premarket 07:35 จะเข้าในวันถัดไป</div>`;
 }
 
+// 13 Nov 2026: multi-day 'dip in an uptrend' ideas (snap.swing from live_monitor.swing_box / srlive/swing.py)
+function swingHtml() {
+  const S = SNAP.swing;
+  if (S === undefined) return '<span class="mut">แผนถือหลายวันเริ่มแสดงหลัง premarket รอบถัดไป</span>';
+  if (!S) return '<span class="mut">วันนี้ไม่มีข้อมูลแผนถือหลายวัน</span>';
+  const p0 = v => v == null ? '–' : Math.round(v * 100) + '%', dm = d => d ? `${+d.slice(8, 10)}/${+d.slice(5, 7)}` : '';
+  const R = S.rule || {}, cost = R.cost || 0.0017, hold = R.hold || 10;
+  const tchip = t => t === 'A' ? '<span class="tchip tg">ระดับ A</span>' : '<span class="tchip tn">ระดับ B</span>';
+  const tdesc = t => t === 'A' ? 'ระดับ A (ตลาดถูกขายทั้งกระดาน: สถิติดีกว่า)' : 'ระดับ B (ย่อเฉพาะตัว: สถิติไม่ชัด)';
+  const nm = r => `<a href="#" onclick="addExtra('${r.symbol}');return false"><b>${esc(r.symbol)}</b></a> <span class="mut" style="font-size:12px">(${esc(r.code || '')})</span>`;
+  const L = S.live || {};
+  let o = `<div style="margin-bottom:6px">ณ ปิด ${dm(S.asof)}: หุ้นที่ย่อแรงพร้อมกัน <b>${p0(S.breadth)}</b> ของ ${S.n_univ || ''} ตัว → <b>${tdesc(S.tier)}</b>` +
+    (L.breadth == null ? '' : ` · <span class="mut">ตอนนี้ ${p0(L.breadth)} ถ้าปิดแบบนี้เป็นระดับ ${L.tier}</span>`) + '</div>';
+  // 1) today's limit orders
+  const C = S.cands || [];
+  o += `<p style="margin:6px 0 4px"><b>ตั้งซื้อวันนี้</b> <span class="mut">สัญญาณจากราคาปิด ${dm(S.asof)} · ใช้ได้วันนี้วันเดียว · ไม่ถึงราคาไม่ต้องไล่ซื้อ</span></p>`;
+  if (!C.length) o += '<div class="mut">วันนี้ไม่มีหุ้นเข้าเกณฑ์</div>';
+  else o += `<div class="wrap"><table><tr><th class="l">หุ้น (กลุ่ม)</th><th class="l">ระดับ</th><th>RSI2</th><th>ปิดวานนี้</th><th>ตั้งซื้อ</th><th>ตั้งซื้อลึก</th><th>ต่ำสุดวันนี้</th><th>ล่าสุด</th><th class="l">สถานะ</th></tr>` +
+    C.map(r => `<tr><td class="l" style="white-space:nowrap">${nm(r)}</td><td class="l">${tchip(r.tier)}</td><td>${num(r.rsi2, 1)}</td><td>${num(r.sig_close)}</td><td><b>${num(r.bid)}</b></td><td>${num(r.bid2)}</td>
+      <td>${r.low == null ? '–' : num(r.low)}</td><td>${r.last == null ? '–' : num(r.last)}</td>
+      <td class="l">${r.hit ? '<b class="pos">ถึงราคาตั้งซื้อแล้ว</b>' : r.last == null || r.bid == null ? '<span class="mut">–</span>' : `<span class="mut">ยังไม่ถึง (ห่าง ${((r.last / r.bid - 1) * 100).toFixed(1)}%)</span>`}${r.held ? ' <span class="mut">· ถืออยู่แล้ว (สัญญาณซ้ำ)</span>' : ''}</td></tr>`).join('') + '</table></div>';
+  if ((S.unfilled || []).length) o += `<div class="mut" style="margin-top:4px">เมื่อวานตั้งซื้อแล้วราคาไม่ลงถึง: ${S.unfilled.map(u => esc(u.symbol) + ' ' + num(u.bid)).join(' · ')}</div>`;
+  // 2) ideas still held
+  const T = (S.tracker || []).filter(r => r.status === 'open'), D = (S.tracker || []).filter(r => r.status === 'closed');
+  o += `<p style="margin:10px 0 4px"><b>ถืออยู่ตามแผน</b> <span class="mut">ขายที่ราคาปิดของวันแรกที่ปิดเหนือค่าเฉลี่ย 5 วัน หรือครบ ${hold} วัน</span></p>`;
+  if (!T.length) o += '<div class="mut">ไม่มีรายการที่ถืออยู่</div>';
+  else o += `<div class="wrap"><table><tr><th class="l">หุ้น (กลุ่ม)</th><th class="l">สัญญาณ</th><th>ราคาเข้า</th><th>วันที่</th><th>ล่าสุด</th><th>วันนี้</th><th>ผลถึงตอนนี้</th><th class="l">จุดขายวันนี้</th></tr>` +
+    T.map(r => { const px = r.last != null ? r.last : r.last_close, ret = px == null || !r.entry ? null : px * (1 - cost) / (r.entry * (1 + cost)) - 1;
+      const sell = r.last_day ? '<b class="neg">วันสุดท้าย: ขายที่ราคาปิดวันนี้</b>' : r.trig == null ? '–' : `ปิดเหนือ <b>${num(r.trig)}</b> ` + (r.last == null ? '' : r.last > r.trig ? '<span class="pos">· ตอนนี้อยู่เหนือ ถ้าปิดแบบนี้ขาย</span>' : '<span class="mut">· ยังต่ำกว่า ถือต่อ</span>');
+      return `<tr><td class="l" style="white-space:nowrap">${nm(r)}</td><td class="l" style="white-space:nowrap">${dm(r.sig)} ${tchip(r.tier)}${r.repeat ? ` <span class="mut" style="font-size:12px">ซ้ำ ${r.repeat}</span>` : ''}</td><td>${num(r.entry)}</td><td>${(r.days || 0) + 1}/${hold}</td>
+        <td>${px == null ? '–' : num(px)}</td><td>${pct(r.chg)}</td><td><b>${pct(ret)}</b></td><td class="l" style="white-space:nowrap">${sell}</td></tr>`; }).join('') + '</table></div>';
+  if (D.length) o += `<div class="mut" style="margin-top:4px">ปิดแล้วใน 5 วันทำการล่าสุด: ${D.map(r => `${esc(r.symbol)} ${pct(r.ret, 1)} (${r.days} วัน)`).join(' · ')}</div>`;
+  // 3) provisional new signals at the current prices
+  if (L.prov) o += `<p style="margin:10px 0 4px"><b>สัญญาณใหม่ถ้าปิดที่ราคาตอนนี้</b> <span class="mut">ชั่วคราว ยืนยันเมื่อปิดตลาด (หลัง 16:00 ตรงกับราคาปิดราว 9 ใน 10) · ${L.n_prov || 0} ตัว</span></p>` +
+    (L.prov.length ? '<div>' + L.prov.map(r => `${nm(r)} <span class="mut" style="font-size:12px">RSI2 ${num(r.rsi2, 1)}</span> ${pct(r.chg, 1)}`).join(' · ') + '</div>' : '<div class="mut">ยังไม่มี</div>');
+  return o + `<div class="mut" style="margin-top:8px">เกณฑ์: ราคาปิด &gt; ค่าเฉลี่ย 100 วัน, ค่าเฉลี่ย 50 วัน &gt; 100 วัน (ขาขึ้นระยะยาว) และ RSI 2 วัน &lt; 10 (ย่อแรงระยะสั้น) · ตั้งซื้อ = ราคาปิด − 0.25 เท่าของ ATR 14 วัน (ลึก = − 0.5 เท่า) ·
+    ระดับ A = วันนั้นหุ้นที่ติดตามตั้งแต่ 20% ขึ้นไปมี RSI2 &lt; 10 · ไม่ใช้จุดตัดขาดทุนตามราคา (ทดสอบแล้วทำให้ผลแย่ลง) ความเสี่ยงคุมด้วยขนาดไม้ ·
+    ทดสอบ ก.ค. 64–ต.ค. 69 หักค่าซื้อขายแล้ว ต่อรายการที่ได้ของ: <b>ระดับ A</b> +0.2% ถึง +0.6% (2564–67) และ +1.0% ถึง +1.3% (2568–69) ชนะ 63–73% กำไรเฉลี่ย +3% ขาดทุนเฉลี่ย −3.6% ถือเฉลี่ย 4–5 วัน ได้ของราวครึ่งหนึ่งของที่ตั้ง ·
+    <b>ระดับ B</b> −0.2% ถึง +0.2% และ +0.4% ถึง +0.6% · รายการที่แย่สุด 1 ใน 20 ขาดทุนราว −6% ถึง −7% และ 1 ใน 100 ราว −14% มักเกิดพร้อมกันในกลุ่มเดียว · ถือ 20 วันไม่ได้ดีกว่า · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div>`;
+}
+
 // 6 Nov 2026: the most active stocks by pace, all groups mixed (snap.pace_top from live_monitor; older snapshots: groups + shown watch list)
 function paceHtml() {
   let L = SNAP.pace_top;
@@ -541,6 +584,7 @@ async function loadSnap() {
     $('#gstocks').innerHTML = groupStocksHtml();
     { const pt = document.getElementById('pacetop'); if (pt) pt.innerHTML = paceHtml(); }
     { const eb = document.getElementById('earnbox'); if (eb) eb.innerHTML = earnHtml(); }
+    { const sb = document.getElementById('swing'); if (sb) sb.innerHTML = swingHtml(); }
     renderCards();
   } catch (e) { $('#feed').textContent = 'รอข้อมูลจาก live_monitor…'; }
 }
