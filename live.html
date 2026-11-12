@@ -58,7 +58,7 @@ h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(
 <div class="mut">เส้นน้ำเงิน EMA9 · ส้ม EMA21 · ม่วงประ VWAP · เส้นประน้ำเงิน = bid · เขียว = เป้าขาย · เทา = ราคาปิดวานนี้ · แท่งสุดท้ายขยับตามราคาล่าสุดทุก 5 วินาที · กด "กราฟ" ที่หุ้นตัวไหนก็ได้เพื่อเพิ่มการ์ด</div>
 <div class="chartgrid" id="cards"></div>
 <h2>หุ้นแรงกว่า SET (ทุกตัวที่ติดตาม) <span class="mut fsel" style="font-size:13px;font-weight:400">เฉพาะขาขึ้นตาม: <label><input type="checkbox" id="onlyup"> SMA รายวัน (เดิม)</label><label><input type="checkbox" id="onlyha"> Heikin Ashi รายสัปดาห์</label><label><input type="checkbox" id="onlymacd"> MACD เร่งขึ้น</label></span></h2><div class="card" id="scan"></div>
-<div class="cols"><div><h2>กลุ่ม</h2><div class="card" id="groups"></div></div><div><h2>หุ้นในกลุ่ม (กดชื่อกลุ่มเพื่อเปลี่ยน)</h2><div class="card" id="gstocks"></div><h2>Pace สูงสุด 10 อันดับ (ทุกกลุ่ม)</h2><div class="card" id="pacetop"></div></div></div>
+<div class="cols"><div><h2>กลุ่ม</h2><div class="card" id="groups"></div></div><div><h2>หุ้นในกลุ่ม (กดชื่อกลุ่มเพื่อเปลี่ยน)</h2><div class="card" id="gstocks"></div><h2>Pace สูงสุด 10 อันดับ (ทุกกลุ่ม)</h2><div class="card" id="pacetop"></div><h2 id="earnh">งบไตรมาส</h2><div class="card" id="earnbox"></div></div></div>
 <div class="mut">งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></main><script>
 const REFRESH = 5 * 1000;
 // data source: local files served by sr_server.py, or (online page) window.SR_DATA reading Supabase
@@ -422,10 +422,10 @@ function strongHtml() {
   const on = [ONLYUP && 'SMA', ONLYHA && 'HA', ONLYMACD && 'MACD เร่งขึ้น'].filter(Boolean);
   const fl = !on.length ? '' : on.length === 1 ? 'ผ่าน ' + on[0] : 'ผ่านทุกเกณฑ์ที่ติ๊ก (' + on.join(' + ') + ')';
   const wait = (ONLYHA && !hasHa) || (ONLYMACD && !hasMacd);
-  const empty = !L.length ? `<tr><td class="l mut" colspan="12">${wait ? 'ข้อมูลเกณฑ์ที่ติ๊กจะเริ่มมีหลัง premarket รอบถัดไป' : 'ตอนนี้ยังไม่มีหุ้นที่' + fl}</td></tr>` : '';
-  return `<div class="wrap"><table><tr><th class="l">หุ้น</th><th class="l">กลุ่ม</th><th class="l">เทรนด์รายวัน (SMA)</th><th class="l">HA สัปดาห์</th><th class="l">MACD ชัน</th><th>ราคาล่าสุด</th><th>วันนี้</th><th>แรงกว่า SET</th><th>จากราคาต่ำสุด</th><th>มูลค่า ลบ.</th><th>Pace</th><th></th></tr>` +
+  const empty = !L.length ? `<tr><td class="l mut" colspan="13">${wait ? 'ข้อมูลเกณฑ์ที่ติ๊กจะเริ่มมีหลัง premarket รอบถัดไป' : 'ตอนนี้ยังไม่มีหุ้นที่' + fl}</td></tr>` : '';
+  return `<div class="wrap"><table><tr><th class="l">หุ้น</th><th class="l">กลุ่ม</th><th class="l">เทรนด์รายวัน (SMA)</th><th class="l">HA สัปดาห์</th><th class="l">MACD ชัน</th><th class="l">งบ</th><th>ราคาล่าสุด</th><th>วันนี้</th><th>แรงกว่า SET</th><th>จากราคาต่ำสุด</th><th>มูลค่า ลบ.</th><th>Pace</th><th></th></tr>` +
     L.map(x => `<tr><td class="l"><b>${esc(x.symbol)}</b>${x.tradable ? '' : ' <span class="mut">(สภาพคล่องต่ำ)</span>'}</td><td class="l mut">${esc(x.code)}</td>
-      <td class="l">${trendChip(x.trend, x.trend_ok)}</td><td class="l">${haChip(x)}</td><td class="l">${macdCell(x)}</td><td>${num(x.last)}</td><td>${pct(x.chg)}</td><td><b>${pct(x.rs)}</b></td><td>${pct(x.from_low)}</td>
+      <td class="l">${trendChip(x.trend, x.trend_ok)}</td><td class="l">${haChip(x)}</td><td class="l">${macdCell(x)}</td><td class="l">${earnChip(x.earn)}</td><td>${num(x.last)}</td><td>${pct(x.chg)}</td><td><b>${pct(x.rs)}</b></td><td>${pct(x.from_low)}</td>
       <td>${num(x.value_mb, 1)}</td><td>${x.pace == null ? '–' : num(x.pace, 1)}</td><td><button class="mini" onclick="addExtra('${x.symbol}')">กราฟ</button></td></tr>`).join('') + empty +
     `</table></div><div class="mut">${fl ? '<b>แสดงเฉพาะหุ้นที่' + fl + '</b> (กรองจากทุกตัวก่อนตัด ' + (SNAP.strong_n || 15) + ' อันดับ) · ' : ''}หุ้นทุกตัวที่ระบบติดตาม (กลุ่ม 104 ตัว + นอกกลุ่ม ${SNAP.scan_n ?? ''} ตัว เช่น AOT BANPU) เรียงตาม "แรงกว่า SET" = % วันนี้ ลบ % ของ SET · เกณฑ์ใช้ราคาปิดวานนี้: SMA = ราคาปิด > ${MA()}20 > ${MA()}50 และ ${MA()}20 ชี้ขึ้น · HA = แท่ง Heikin Ashi รายสัปดาห์เขียว 2 สัปดาห์ติด (เฉพาะสัปดาห์ที่จบแล้ว สีไม่เปลี่ยนระหว่างสัปดาห์) · MACD ชัน = ความชันของเส้น MACD(12,26) รายวัน หารด้วยค่าแกว่งปกติของหุ้นตัวนั้น (+1 = ชันกว่าปกติ 1 เท่า) เขียว = ชันขึ้นและยังเร่งขึ้น (เว้าหงาย) แดง = ผ่านจุดเปลี่ยนเว้าแล้ว หรือกำลังลง · ติ๊กหลายช่อง = ต้องผ่านทุกเกณฑ์ที่ติ๊ก ·
     ทดสอบ MACD เร่งขึ้น (137 ตัว มี.ค. 64–พ.ย. 69 ซื้อเปิดวันถัดไป ขายเมื่อหมดช่วงเร่งขึ้น): ไม่ดีกว่าตลาด (−0.08% และ 0.00% ต่อรายการ) ความชันสูงกว่าเดิมก็ไม่ช่วย ขายตอนผ่านจุดเปลี่ยนเว้าก็ไม่ได้ช่วยหลบขาลง ใช้ประกอบเท่านั้น ·
@@ -461,6 +461,54 @@ function groupStocksHtml() {
     g.stocks.map(s => `<tr><td class="l"><b>${esc(s.symbol)}</b>${s.tradable ? '' : ' <span class="mut">(สภาพคล่องต่ำ)</span>'}</td><td>${num(s.last)}</td><td>${pct(s.chg)}</td><td>${num(s.low)}</td>
       <td>${pct(s.from_low)}</td><td>${num(s.value_mb, 1)}</td><td>${s.pace == null ? '–' : num(s.pace, 1)}</td><td><button class="mini" onclick="addExtra('${s.symbol}')">กราฟ</button></td></tr>`).join('') + '</table></div>';
 }
+// 12 Nov 2026: quarterly results (state 'earn' from premarket/earn_live.py): chip in the strong table + the season box
+const pp = v => v == null ? '–' : `${v > 0 ? '+' : ''}${(+v).toFixed(1)}%`;
+const fdt = s => s ? `${+s.slice(8, 10)}/${+s.slice(5, 7)} ${s.slice(11, 16)}` : '';
+const ago = s => s ? (Date.now() - Date.parse(s.replace(' ', 'T') + ':00+07:00')) / 864e5 : 99;
+function earnChip(e) {
+  if (!e) return '<span class="mut">–</span>';
+  const q = (e.q || '').split(' ')[0];
+  if (e.st === 'just' || e.st === 'done') {
+    if (e.sue == null) return `<span class="mut">${q} ออกแล้ว</span>`;
+    const cls = e.sue > 0.25 ? 'pos' : e.sue < -0.25 ? 'neg' : '';
+    return `<span class="${cls}" style="white-space:nowrap">${q} ${esc(e.bin || '')}${e.st === 'just' ? ' · ออก ' + fdt(e.filed) : ''}</span>`;
+  }
+  if (e.st === 'filed') return `<span class="mut" style="white-space:nowrap">${q} ออกแล้ว ${fdt(e.filed)} (ตัวเลขยังไม่เข้า)</span>`;
+  if (e.tilt === 'top') return `<span class="pos" style="white-space:nowrap">รอ ${q} · แนวโน้มดีกว่าคาด</span>`;
+  if (e.tilt === 'bot') return `<span class="neg" style="white-space:nowrap">รอ ${q} · แนวโน้มแย่กว่าคาด</span>`;
+  return `<span class="mut" style="white-space:nowrap">รอ ${q}</span>`;
+}
+function earnHtml() {
+  const B = SNAP.earn_box;
+  if (B === undefined) return '<span class="mut">ข้อมูลงบเริ่มแสดงหลัง premarket รอบถัดไป</span>';
+  if (!B || !B.season) return '<span class="mut">ไม่อยู่ในช่วงประกาศงบ (ช่วงประกาศ: 10 วันหลังสิ้นไตรมาส ถึงวันครบกำหนดส่งงบ)</span>';
+  const se = B.season, R = B.rows || [], q = se.q;
+  const h = document.getElementById('earnh'); if (h) h.textContent = `งบไตรมาส ${q} · ครบกำหนดส่ง ${fdt(se.due + ' 00:00').split(' ')[0]}`;
+  const just = R.filter(r => r.st === 'just' && r.sue != null).sort((a, b) => b.sue - a.sue);
+  const show = just.length > 12 ? just.slice(0, 6).concat(just.slice(-6)) : just;
+  const filed = R.filter(r => r.st === 'filed' && ago(r.filed) < 7);
+  const pend = t => R.filter(r => r.st === 'pending' && (t ? r.tilt === t : r.tilt !== 'top' && r.tilt !== 'bot'));
+  const tag = r => `<b>${esc(r.symbol)}</b> <span class="mut" style="font-size:12px">(${esc(r.code)})</span>`;
+  const list = L => L.length ? L.map(r => `${tag(r)}${r.chg == null ? '' : ' ' + pct(r.chg, 1)}`).join(' · ') : '<span class="mut">–</span>';
+  const T = (B.tilt || {}).top, Bo = (B.tilt || {}).bot;
+  let o = '';
+  const SH = {'แย่กว่าคาดมาก': 'แย่มาก', 'แย่กว่าคาด': 'แย่', 'แย่กว่าคาดเล็กน้อย': 'แย่นิด', 'ตามคาด': 'ตามคาด', 'ดีกว่าคาดเล็กน้อย': 'ดีนิด', 'ดีกว่าคาด': 'ดี', 'ดีกว่าคาดมาก': 'ดีมาก'};
+  if (show.length) o += `<div class="mut" style="margin-bottom:4px">ออกใน 7 วันที่ผ่านมา ${just.length} ตัว${just.length > 12 ? ' (แสดงดีสุด 6 และแย่สุด 6)' : ''} · กดชื่อเพื่อเพิ่มกราฟ</div>
+    <div class="wrap"><table style="font-size:13px"><tr><th class="l">หุ้น<span class="th">กลุ่ม · วันออก</span></th><th class="l">เทียบค่าคาด</th><th>กำไร ลบ.<span class="th">ไตรมาสก่อน / ปีก่อน</span></th><th>ในอดีต<span class="th">วันแรก / 5 วัน</span></th><th>วันนี้</th></tr>` +
+    show.map(r => `<tr><td class="l" style="white-space:nowrap"><a href="#" onclick="addExtra('${r.symbol}');return false"><b>${esc(r.symbol)}</b></a><br><span class="mut" style="font-size:11px">${esc(r.code)} · ${fdt(r.filed).split(' ')[0]}</span></td>
+      <td class="l"><span class="${r.sue > 0.25 ? 'pos' : r.sue < -0.25 ? 'neg' : ''}" style="white-space:nowrap">${esc(SH[r.bin] || r.bin || '')} ${r.sue > 0 ? '+' : ''}${num(r.sue, 1)}</span></td>
+      <td style="white-space:nowrap">${r.np == null ? '–' : num(r.np, 0)}<br><span class="mut" style="font-size:11px">${r.np_pq == null ? '–' : num(r.np_pq, 0)} / ${r.np_ly == null ? '–' : num(r.np_ly, 0)}</span></td>
+      <td style="white-space:nowrap">${pp(r.bin_r0)}<br><span class="mut" style="font-size:11px">${pp(r.bin_dr5)}</span></td><td>${pct(r.chg)}</td></tr>`).join('') + '</table></div>';
+  if (filed.length) o += `<p style="margin:8px 0 4px"><b>ออกแล้ว รอตัวเลขเข้าฐานข้อมูล:</b> ${filed.map(r => `${tag(r)} <span class="mut" style="font-size:12px">${fdt(r.filed)}</span>`).join(' · ')}</p>`;
+  const pt = pend('top'), pb = pend('bot'), pm = pend(null);
+  o += `<p style="margin:8px 0 4px"><b class="pos">ยังไม่ออก · แนวโน้มดีกว่าคาด</b> ${T ? `<span class="mut">(ในอดีต ดีกว่าคาด ${Math.round(T.beat * 100)}% · ราคาวันประกาศเฉลี่ย ${pp(T.r0)} ครึ่งหนึ่งอยู่ระหว่าง ${pp(T.q25)} ถึง ${pp(T.q75)})</span>` : ''}<br>${list(pt)}</p>
+    <p style="margin:8px 0 4px"><b class="neg">ยังไม่ออก · แนวโน้มแย่กว่าคาด</b> ${Bo ? `<span class="mut">(ในอดีต ดีกว่าคาดแค่ ${Math.round(Bo.beat * 100)}% · ราคาวันประกาศเฉลี่ย ${pp(Bo.r0)} ครึ่งหนึ่งอยู่ระหว่าง ${pp(Bo.q25)} ถึง ${pp(Bo.q75)})</span>` : ''}<br>${list(pb)}</p>
+    <p style="margin:8px 0 4px"><b>ยังไม่ออก · ไม่ชัด</b> <span class="mut">${pm.length} ตัว</span></p>`;
+  return o + `<div class="mut">คาด = ค่าคาดทางสถิติ (กำไรไตรมาสเดียวกันปีก่อน + แนวโน้ม 4 ไตรมาส) ไม่ใช่ประมาณการนักวิเคราะห์ · ตัวเลขในวงเล็บหลังผล = จำนวนเท่าของค่าแกว่งปกติ ·
+    แนวโน้มก่อนประกาศมาจากผลไตรมาสก่อน (ทดสอบ 2,327 ครั้ง 129 ตัว ม.ค. 65–ต.ค. 69) · "ในอดีต" = ราคาเทียบค่าเฉลี่ยหุ้นที่ติดตาม ส่วนใหญ่ขยับที่ราคาเปิดวันแรกหลังประกาศ · ผลหลังประกาศอธิบายราคาได้น้อย
+    และหุ้นที่โบรกติดตามมากอาจขยับต่างจากนี้มาก เช่น HANA 12 พ.ย. ผลทางสถิติแค่ดีกว่าคาดเล็กน้อย แต่ราคา +20% เพราะกำไรเกินประมาณการโบรก · งบที่ออกหลัง premarket 07:35 จะเข้าในวันถัดไป</div>`;
+}
+
 // 6 Nov 2026: the most active stocks by pace, all groups mixed (snap.pace_top from live_monitor; older snapshots: groups + shown watch list)
 function paceHtml() {
   let L = SNAP.pace_top;
@@ -492,6 +540,7 @@ async function loadSnap() {
     $('#groups').innerHTML = groupsHtml();
     $('#gstocks').innerHTML = groupStocksHtml();
     { const pt = document.getElementById('pacetop'); if (pt) pt.innerHTML = paceHtml(); }
+    { const eb = document.getElementById('earnbox'); if (eb) eb.innerHTML = earnHtml(); }
     renderCards();
   } catch (e) { $('#feed').textContent = 'รอข้อมูลจาก live_monitor…'; }
 }
