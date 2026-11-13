@@ -537,26 +537,30 @@ function swingHtml() {
   o += `<p style="margin:6px 0 4px"><b>ตั้งซื้อวันนี้</b> <span class="mut">สัญญาณจากราคาปิด ${dm(S.asof)} · ตั้งเช้านี้ ใช้ได้วันนี้วันเดียว · ไม่ถึงราคาไม่ต้องไล่ซื้อ · รายการหลักไม่เกิน ${maxb} ตัว กลุ่มละ 1 ตัว เรียงจากขาขึ้นยาวแรงสุด</span></p>`;
   if (!C.length) o += '<div class="mut">วันนี้ไม่มีหุ้นเข้าเกณฑ์</div>';
   else o += `<div class="wrap"><table><tr><th>#</th><th class="l">หุ้น (กลุ่ม)</th><th>ปิด ${dm(S.asof)}</th>
-      <th>ตั้งซื้อ<span class="th">ต่ำกว่าราคาปิด</span></th><th>ตั้งซื้อลึก</th><th>ต่ำสุดวันนี้</th><th>ล่าสุด</th><th>กลุ่มย่อ<span class="th">ตัวที่ย่อ/ทั้งกลุ่ม</span></th><th>เหนือเส้น<span class="th">100 วัน</span></th><th class="l">สถานะ</th></tr>` +
+      <th>ตั้งซื้อ<span class="th">และตั้งซื้อลึก</span></th><th>ต่ำสุดวันนี้</th><th>ล่าสุด</th><th class="l">จุดขายถ้าได้ของ<span class="th">ตั้งขายเร็ว · หรือรอปิดเหนือ</span></th><th>กลุ่มย่อ<span class="th">ตัวที่ย่อ/ทั้งกลุ่ม</span></th><th>เหนือเส้น<span class="th">100 วัน</span></th><th class="l">สถานะ</th></tr>` +
     C.map(r => { const main = r.pick !== false;
-      const why = main ? '' : r.why === 'held' ? 'ถืออยู่แล้ว (สัญญาณซ้ำ) ไม่ตั้งเพิ่ม' : r.why === 'sector' ? `สำรอง: กลุ่มเดียวกับ ${esc(r.with_ || '')}` : `สำรอง: เกิน ${maxb} ตัว`;
-      const stt = r.hit ? '<b class="pos">ถึงราคาตั้งซื้อแล้ว</b>' : r.last == null || r.bid == null ? '' : `<span class="mut">ยังไม่ถึง (ห่าง ${((r.last / r.bid - 1) * 100).toFixed(1)}%)</span>`;
+      const why = main ? '' : r.why === 'held' ? 'ถืออยู่แล้ว ไม่ตั้งเพิ่ม' : r.why === 'sector' ? `สำรอง: กลุ่มเดียวกับ ${esc(r.with_ || '')}` : `สำรอง: เกิน ${maxb} ตัว`;
+      const stt = r.hit ? `<b class="pos">ถึงราคาตั้งซื้อ${r.hit2 ? 'ลึก' : ''}แล้ว</b>` : r.last == null || r.bid == null ? '' : `<span class="mut">ยังไม่ถึง (ห่าง ${((r.last / r.bid - 1) * 100).toFixed(1)}%)</span>`;
       return `<tr${main ? '' : ' style="opacity:.6"'} title="RSI 2 วัน ${num(r.rsi2, 1)}"><td>${main ? '<b>' + (r.rank || '') + '</b>' : '–'}</td><td class="l" style="white-space:nowrap">${nm(r)}</td><td>${num(r.sig_close)}</td>
-        <td style="white-space:nowrap"><b>${num(r.bid)}</b>${stepTxt(r.ticks)}</td><td style="white-space:nowrap">${num(r.bid2)}${stepTxt(r.ticks2)}</td>
-        <td>${r.low == null ? '–' : num(r.low)}</td><td>${r.last == null ? '–' : num(r.last)}</td><td>${sec(r)}</td><td>${r.d100 == null ? '–' : pct(r.d100, 1)}</td>
+        <td style="white-space:nowrap"><b>${num(r.bid)}</b>${stepTxt(r.ticks)}<br><span class="mut">ลึก</span> ${num(r.bid2)}${stepTxt(r.ticks2)}</td>
+        <td>${r.low == null ? '–' : num(r.low)}</td><td>${r.last == null ? '–' : num(r.last)}</td>
+        <td class="l" style="white-space:nowrap">เร็ว <b>${num(r.sig_close)}</b>${r.bid ? ` <span class="mut" style="font-size:12px">${pct(r.sig_close / r.bid - 1, 1)}</span>` : ''}${r.trig == null ? '' : `<br><span class="mut">ปิดเหนือ</span> ${num(r.trig)}`}</td><td>${sec(r)}</td><td>${r.d100 == null ? '–' : pct(r.d100, 1)}</td>
         <td class="l">${[why ? '<span class="mut">' + why + '</span>' : '', stt, main && r.held ? '<span class="mut">ถืออยู่แล้ว (สัญญาณซ้ำ)</span>' : ''].filter(Boolean).join(' · ') || '<span class="mut">–</span>'}</td></tr>`; }).join('') + '</table></div>' +
     (np < C.length ? `<div class="mut" style="margin-top:3px">แถวสีจาง = สำรองหรือถืออยู่แล้ว · หุ้นกลุ่มเดียวกันมักได้ของและขึ้นลงพร้อมกัน จึงนับเป็นการเสี่ยงก้อนเดียว</div>` : '');
   if ((S.unfilled || []).length) o += `<div class="mut" style="margin-top:4px">วันทำการก่อนหน้าตั้งซื้อแล้วราคาไม่ลงถึง: ${S.unfilled.map(u => esc(u.symbol) + ' ' + num(u.bid)).join(' · ')}</div>`;
   // 2) ideas still held
   const T = (S.tracker || []).filter(r => r.status === 'open'), D = (S.tracker || []).filter(r => r.status === 'closed');
-  o += `<p style="margin:10px 0 4px"><b>ถืออยู่ตามแผน</b> <span class="mut">ขายที่ราคาปิดของวันแรกที่ปิดเหนือค่าเฉลี่ย 5 วัน หรือครบ ${hold} วัน</span></p>`;
+  o += `<p style="margin:10px 0 4px"><b>ถืออยู่ตามแผน</b> <span class="mut">กติกาหลัก: ขายที่ราคาปิดของวันแรกที่ปิดเหนือค่าเฉลี่ย 5 วัน หรือครบ ${hold} วัน · ทางเลือกประหยัดเวลา: ตั้งขายเร็วที่ราคาปิดก่อนวันย่อ · หุ้นที่ได้ของวันนี้จะเข้าตารางนี้เช้าวันทำการถัดไป</span></p>`;
   if (!T.length) o += '<div class="mut">ไม่มีรายการที่ถืออยู่</div>';
-  else o += `<div class="wrap"><table><tr><th class="l">หุ้น (กลุ่ม)</th><th class="l">สัญญาณ</th><th>ราคาเข้า</th><th>วันที่</th><th>ล่าสุด</th><th>วันนี้</th><th>ผลถึงตอนนี้</th><th class="l">จุดขายวันนี้</th></tr>` +
+  else o += `<div class="wrap"><table><tr><th class="l">หุ้น (กลุ่ม)</th><th class="l">สัญญาณ</th><th>ราคาเข้า</th><th>วันที่</th><th>ล่าสุด</th><th>วันนี้</th><th>ผลถึงตอนนี้</th><th class="l">ตั้งขายเร็ว<span class="th">ราคาปิดก่อนวันย่อ</span></th><th class="l">ขายตามกติกา<span class="th">ที่ราคาปิดวันนี้</span></th></tr>` +
     T.map(r => { const px = r.last != null ? r.last : r.last_close, ret = px == null || !r.entry ? null : px * (1 - cost) / (r.entry * (1 + cost)) - 1;
-      const sell = r.last_day ? '<b class="neg">วันสุดท้าย: ขายที่ราคาปิดวันนี้</b>' : r.trig == null ? '–' : `ปิดเหนือ <b>${num(r.trig)}</b> ` + (r.last == null ? '' : r.last > r.trig ? '<span class="pos">· ตอนนี้อยู่เหนือ ถ้าปิดแบบนี้ขาย</span>' : '<span class="mut">· ยังต่ำกว่า ถือต่อ</span>');
+      const sell = r.last_day ? '<b class="neg">วันสุดท้าย: ขายที่ราคาปิดวันนี้</b>' : r.trig == null ? '–' : `ปิดเหนือ <b>${num(r.trig)}</b> ` + (r.last == null ? '' : r.last > r.trig ? '<span class="pos">· ตอนนี้เหนือ: ปิดแบบนี้ขาย</span>' : '<span class="mut">· ยังต่ำกว่า ถือต่อ</span>');
+      const fp = r.fast_px != null ? r.fast_px : r.sig_close, fgain = fp && r.entry ? fp * (1 - cost) / (r.entry * (1 + cost)) - 1 : null;
+      const fast = fp == null ? '–' : r.fast_day ? `<span class="mut">${num(fp)} ถึงแล้วเมื่อ ${dm(r.fast_day)} (${pct(r.fast_ret, 1)})</span>` :
+        `<b>${num(fp)}</b> <span class="mut" style="font-size:12px">${pct(fgain, 1)}</span>` + ((r.high != null ? r.high : r.last) >= fp ? ' <span class="pos">· วันนี้ถึงแล้ว</span>' : '');
       return `<tr><td class="l" style="white-space:nowrap">${nm(r)}</td><td class="l" style="white-space:nowrap">${dm(r.sig)} ${tchip(r.tier)}${r.repeat ? ` <span class="mut" style="font-size:12px">ซ้ำ ${r.repeat}</span>` : ''}</td><td>${num(r.entry)}</td><td>${(r.days || 0) + 1}/${hold}</td>
-        <td>${px == null ? '–' : num(px)}</td><td>${pct(r.chg)}</td><td><b>${pct(ret)}</b></td><td class="l" style="white-space:nowrap">${sell}</td></tr>`; }).join('') + '</table></div>';
-  if (D.length) o += `<div class="mut" style="margin-top:4px">ปิดแล้วใน 5 วันทำการล่าสุด: ${D.map(r => `${esc(r.symbol)} ${pct(r.ret, 1)} (${r.days} วัน)`).join(' · ')}</div>`;
+        <td>${px == null ? '–' : num(px)}</td><td>${pct(r.chg)}</td><td><b>${pct(ret)}</b></td><td class="l" style="white-space:nowrap">${fast}</td><td class="l">${sell}</td></tr>`; }).join('') + '</table></div>';
+  if (D.length) o += `<div class="mut" style="margin-top:4px">ปิดแล้วใน 5 วันทำการล่าสุด: ${D.map(r => `${esc(r.symbol)} ${pct(r.ret, 1)} (${r.days} วัน${r.fast_ret == null ? '' : ' · ขายเร็ว ' + pct(r.fast_ret, 1) + ' ใน ' + r.fast_days + ' วัน'})`).join(' · ')}</div>`;
   // 3) provisional new signals at the current prices
   if (L.prov) o += `<p style="margin:10px 0 4px"><b>สัญญาณใหม่ถ้าปิดที่ราคาตอนนี้</b> <span class="mut">ชั่วคราว ยืนยันเมื่อปิดตลาด (หลัง 16:00 ตรงกับราคาปิดราว 9 ใน 10) · ${L.n_prov || 0} ตัว · รายการตั้งซื้อจริงออกเช้าวันทำการถัดไป</span></p>` +
     (L.prov.length ? '<div>' + L.prov.map(r => `${nm(r)} <span class="mut" style="font-size:12px">RSI2 ${num(r.rsi2, 1)}${r.sec_n ? ' · กลุ่มย่อ ' + r.sec_low + '/' + r.sec_n : ''}</span> ${pct(r.chg, 1)}`).join(' · ') + '</div>' : '<div class="mut">ยังไม่มี</div>');
@@ -566,7 +570,9 @@ function swingHtml() {
     <b>การคัด ${maxb} ตัว:</b> วันที่มีเกิน 5 ตัว (ราว 10 วันต่อปี) การเรียงตามขาขึ้นยาวได้ +0.8% / +1.1% ต่อรายการ เทียบกับทุกตัว +0.4% / +1.2% (2564–67 / 2568–69) ได้เปรียบเล็กน้อยและไม่แน่นอนรายปี ·
     หุ้นกลุ่มเดียวกันที่ได้ของวันเดียวกันให้ผลไปทางเดียวกันมากกว่าต่างกลุ่ม (สหสัมพันธ์ 0.37 เทียบ 0.11) จึงจำกัดกลุ่มละ 1 ตัว ·
     "กลุ่มย่อ" เป็นข้อมูลประกอบ: ทั้งกลุ่มย่อพร้อมกันให้ผลแย่กว่าในปี 2564–67 (−0.1% เทียบ +0.2%) แต่ดีกว่าในปี 2568–69 (+1.2% เทียบ +0.4%) จึงไม่ใช้เป็นกฎ ·
-    ไม่ใช้จุดตัดขาดทุนตามราคา และเป้าขายตายตัว +3% / +5% / +8% ไม่ได้ดีกว่าการขายเมื่อปิดเหนือค่าเฉลี่ย 5 วัน ความเสี่ยงคุมด้วยขนาดไม้ ·
+    <b>ตั้งขายเร็ว</b> = ตั้งขายที่ราคาปิดก่อนวันย่อ (ช่อง "ปิด") ตั้งแต่วันถัดจากวันที่ได้ของ ควบคู่กับกติกาหลัก: ถือเฉลี่ย 3.0 วันแทน 4.7 วัน ชนะ 83% แต่กำไรต่อรายการ +0.3% / +0.6% เทียบกับกติกาหลัก +0.2% / +0.8% (2564–67 / 2568–69)
+    เพราะกำไรถูกจำกัดที่ราว +1.2% ถึง +1.5% ขณะที่ขาดทุนเฉลี่ยยังราว −4% · ราคาราย 5 นาที ก.ค.–พ.ย. 69: 6 ใน 10 ของรายการที่ได้ของ ราคากลับถึงระดับนี้ในวันเดียวกัน (รายการที่ถึงได้เฉลี่ย +0.7% แต่รวมทุกรายการ +0.3% เทียบกับกติกาหลัก +0.75% ในช่วงเดียวกัน) ·
+    ไม่ใช้จุดตัดขาดทุนตามราคา และเป้าขายตายตัว +1.5% ถึง +8% ไม่ได้กำไรต่อรายการมากกว่าการขายเมื่อปิดเหนือค่าเฉลี่ย 5 วัน ความเสี่ยงคุมด้วยขนาดไม้ ·
     <b>สถิติ</b> ก.ค. 64–ต.ค. 69 หักค่าซื้อขายแล้ว ต่อรายการที่ได้ของ: ระดับ A +0.2% ถึง +0.6% (2564–67) และ +1.0% ถึง +1.3% (2568–69) ชนะ 63–73% กำไรเฉลี่ย +3% ขาดทุนเฉลี่ย −3.6% ถือเฉลี่ย 4–5 วัน
     ตั้ง 4–5 ตัวได้ของเฉลี่ยราว 2 ตัว · ระดับ B −0.2% ถึง +0.2% และ +0.4% ถึง +0.6% · รายการที่แย่สุด 1 ใน 20 ขาดทุนราว −6% ถึง −7% และ 1 ใน 100 ราว −14% · ถือ 20 วันไม่ได้ดีกว่า · งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div>`;
 }
