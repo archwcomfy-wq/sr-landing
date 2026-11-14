@@ -232,7 +232,9 @@ const DCOL = {m5: '#2a78d6', m50: '#8a8a8a', m100: '#eb6834', rsi: '#8e44ad', bi
 
 function swingRows() {
   const S = SNAP?.swing, out = [], seen = new Set();
-  const add = (role, r) => { if (!seen.has(r.symbol) && DAILY[r.symbol]) { seen.add(r.symbol); out.push({s: r.symbol, role, r}); } };
+  // candles of another data day (the minute after a new session starts, before the first candle file of the day) are not drawn
+  const fresh = D => !S || !S.asof || !D.t || dstr(D.t[D.t.length - 1]) === S.asof;
+  const add = (role, r) => { const D = DAILY[r.symbol]; if (!seen.has(r.symbol) && D && fresh(D)) { seen.add(r.symbol); out.push({s: r.symbol, role, r}); } };
   if (S) {
     for (const r of (S.tracker || [])) if (r.status === 'open') add('held', r);
     for (const r of (S.cands || [])) add('cand', r);
