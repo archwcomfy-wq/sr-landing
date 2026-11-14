@@ -52,6 +52,11 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 .dvh{font-weight:600;font-size:12px;margin-top:2px;color:var(--lt-ink)}.dvn{display:block;font-size:11.5px;color:var(--fg);text-decoration:none}.dvn small{display:block;color:var(--mut);font-size:10.5px}.dvn:hover{color:var(--acc)}
 @media (max-width:760px){.divbox{flex:1 0 100%}}
 .msg{font-size:13.5px;margin-top:10px;color:var(--neg,#c0392b)}.msg.ok{color:var(--mut)}.msg:empty{display:none}.gate .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:6px 0 10px}.gate .chk input{width:auto;margin-top:3px}
+/* 14 Nov 2026: wider left menu on a computer screen: every item on one line; the menu scrolls when the list gets long */
+@media (min-width:761px){.side{width:max-content;min-width:232px;max-width:min(460px,42vw);overflow-x:hidden;overflow-y:auto}
+.side button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}.side-head,.side .back,.side .divbox{width:0;min-width:100%}
+.side-head br{display:none}.side-head em{display:inline;font-style:normal}}
+@media (max-width:760px){.side{max-height:42vh;overflow-y:auto}.side button{flex:1 1 46%}}
 </style></head><body><section id="login" class="gate" hidden><div class="card"><h1>SR ห้องติดตาม</h1>
 <div class="seg"><button type="button" data-mode="login">เข้าสู่ระบบ</button><button type="button" data-mode="register">สมัครสมาชิกใหม่</button></div>
 

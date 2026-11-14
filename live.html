@@ -26,7 +26,9 @@ td.l,th.l{text-align:left}td.l{white-space:normal;min-width:110px}.th{display:bl
 a{color:var(--acc)}ul{padding-left:18px;margin:4px 0}li{margin:3px 0}
 
 .chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:10px}.chartcard{min-width:0}
-.chart{width:100%;height:260px}.ch-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.ta{margin:4px 0;font-size:12.5px}
+.chart{width:100%;height:260px}.dgrid{grid-template-columns:repeat(auto-fit,minmax(min(430px,100%),1fr))}.dchart{width:100%;height:340px}.dwrap{position:relative}.rsitag{position:absolute;right:0;bottom:26px;width:56px;height:62px;background:var(--card);color:#8e44ad;font-size:11px;line-height:1.3;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;pointer-events:none;z-index:3}.dlv{font-size:12.5px;line-height:1.5;margin:3px 0 4px}
+.lg{white-space:nowrap}.lg i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:3px}.lg i.da{border-top-style:dashed}.lg i.do{border-top-style:dotted}
+#idbox>summary{cursor:pointer;margin:22px 0 8px}#idbox>summary h2{display:inline;margin:0}.dnote{font-size:12.5px;line-height:1.6;margin-bottom:6px}.dnote label{margin-right:12px}.ch-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.ta{margin:4px 0;font-size:12.5px}
 .mini{font-size:12px;padding:1px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer}
 .ivbar button{font-size:13px;padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer}
 .ivbar button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
@@ -54,11 +56,22 @@ h2.sess{border-top:1px solid var(--line);padding-top:12px}h2.sess.cur{color:var(
 <div id="plan"></div>
 <h2>แผนถือหลายวัน: ซื้อย่อในขาขึ้น <span class="mut" style="font-size:13px;font-weight:400">ทดลอง · คนละแผนกับแผนขายในวันด้านบน</span></h2>
 <div class="card" id="swing"></div>
-<h2>กราฟแท่งเทียน</h2>
+<h2>กราฟรายวัน: หุ้นในแผนถือหลายวัน <span class="mut" style="font-size:13px;font-weight:400">ดูประกอบตารางด้านบนเท่านั้น ไม่ได้ชี้นำการซื้อขาย</span></h2>
+<div class="mut dnote">แท่งรายวันราว 4 เดือน (ราคาปรับสิทธิแล้ว) แท่งสุดท้ายขยับตามราคาล่าสุด · เรียง: ถืออยู่ → ตั้งซื้อวันนี้ → สัญญาณชั่วคราว · กดชื่อหุ้นในตารางด้านบนเพื่อเลื่อนมาที่กราฟ<br>
+<span class="lg"><i style="border-color:#2a78d6"></i>SMA5</span> · <span class="lg"><i class="da" style="border-color:#8a8a8a"></i>SMA50</span> · <span class="lg"><i style="border-color:#eb6834;border-top-width:3px"></i>SMA100</span> ·
+<span class="lg"><i class="da" style="border-color:#2a78d6"></i>ตั้งซื้อ</span> / <span class="lg"><i class="do" style="border-color:#2a78d6"></i>ลึก</span> · <span class="lg"><i class="da" style="border-color:#1f9d55"></i>ขายวันนี้</span> (ระดับ SMA5 ของวัน) · <span class="lg"><i class="da" style="border-color:#0e9aa7"></i>ขายเร็ว</span> · <span class="lg"><i style="border-color:#777"></i>ราคาเข้า</span> ·
+<span class="lg"><i style="border-color:#8e44ad"></i>RSI 2 วัน</span> (แถบล่างของกราฟ สเกล 0–100 เส้นประ = 10)<br>
+<label><input type="checkbox" id="fibon"> Fibonacci extension <span class="lg"><i class="do" style="border-color:#b8860b"></i></span>(จุดต่ำ A → จุดสูง B ของขาขึ้นล่าสุด: 100% · 127.2% · 161.8%)</label>
+<label><input type="checkbox" id="ref10"> เส้นสังเกต −10% จากราคาเข้า <span class="lg"><i class="do" style="border-color:#d64545"></i></span></label>
+<details><summary style="cursor:pointer">หมายเหตุของกราฟ</summary>ตัวเลขบนกราฟเป็นชุดเดียวกับตาราง · ระดับ "ตั้งซื้อ≈" ของสัญญาณชั่วคราวเป็นค่าประมาณจากราคาล่าสุด · แผนนี้ไม่มีจุดตัดขาดทุนตามราคา (ทดสอบแล้วตัดที่ 5–8% ผลเฉลี่ยแย่ลง) เส้น −10% เป็นเส้นสังเกตเท่านั้น: รายการที่ยังลบเกิน 10% ในวันที่ 7 ไม่มีรายการไหนจบเป็นกำไร ·
+Fibonacci และ MACD ไม่อยู่ในเกณฑ์ของแผนนี้และยังไม่ได้ทดสอบกับแผนนี้ จึงไม่ใส่ MACD และให้ Fibonacci เป็นตัวเลือกดูเป้าคร่าว ๆ · แท่งของวันนี้ใช้ราคาเปิดจริงเมื่อระบบอ่านได้ ถ้ายังไม่ได้จะใช้ราคาปิดวานแทนและบอกไว้ใต้ชื่อหุ้น</details></div>
+<div class="mut" id="dnone" hidden></div>
+<div class="chartgrid dgrid" id="dcards"></div>
+<details id="idbox"><summary><h2>กราฟรายนาที: แผนขายในวัน</h2> <span class="mut" style="font-size:13px">กดเพื่อเปิด/ปิด</span></summary>
 <div class="ivbar">ช่วงแท่ง: <button data-iv="1">1 นาที</button> <button data-iv="3">3 นาที</button> <button data-iv="5">5 นาที</button> <button data-iv="15">15 นาที</button>
  <span class="mut" id="barsat"></span></div>
 <div class="mut">เส้นน้ำเงิน EMA9 · ส้ม EMA21 · ม่วงประ VWAP · เส้นประน้ำเงิน = bid · เขียว = เป้าขาย · เทา = ราคาปิดวานนี้ · แท่งสุดท้ายขยับตามราคาล่าสุดทุก 5 วินาที · กด "กราฟ" ที่หุ้นตัวไหนก็ได้เพื่อเพิ่มการ์ด</div>
-<div class="chartgrid" id="cards"></div>
+<div class="chartgrid" id="cards"></div></details>
 <h2>หุ้นแรงกว่า SET (ทุกตัวที่ติดตาม) <span class="mut fsel" style="font-size:13px;font-weight:400">เฉพาะขาขึ้นตาม: <label><input type="checkbox" id="onlyup"> SMA รายวัน (เดิม)</label><label><input type="checkbox" id="onlyha"> Heikin Ashi รายสัปดาห์</label><label><input type="checkbox" id="onlymacd"> MACD เร่งขึ้น</label></span></h2><div class="card" id="scan"></div>
 <div class="cols"><div><h2>กลุ่ม</h2><div class="card" id="groups"></div></div><div><h2>หุ้นในกลุ่ม (กดชื่อกลุ่มเพื่อเปลี่ยน)</h2><div class="card" id="gstocks"></div><h2>Pace สูงสุด 10 อันดับ (ทุกกลุ่ม)</h2><div class="card" id="pacetop"></div><h2 id="earnh">งบไตรมาส</h2><div class="card" id="earnbox"></div></div></div>
 <div class="mut">งานวิจัย ไม่ใช่คำแนะนำการลงทุน</div></main><script>
@@ -98,9 +111,11 @@ function watched() {
 function addExtra(sym) {
   if (!EXTRA.includes(sym)) { EXTRA.push(sym); store.set('sr_extra', EXTRA); }
   SRD.want(sym);
-  renderCards(); loadBars();
+  const b = document.getElementById('idbox'); if (b && !b.open) b.open = true;     // 14 Nov 2026: the minute charts are folded by default
+  renderCards(); renderDaily(); loadBars();
+  setTimeout(() => document.getElementById('card-' + sym)?.scrollIntoView({behavior: 'smooth', block: 'center'}), 80);
 }
-function removeExtra(sym) { EXTRA = EXTRA.filter(s => s !== sym); store.set('sr_extra', EXTRA); renderCards(); }
+function removeExtra(sym) { EXTRA = EXTRA.filter(s => s !== sym); store.set('sr_extra', EXTRA); renderCards(); renderDaily(); }
 
 // ---------- candles & indicators ----------
 function aggregate(b, n) {
@@ -139,6 +154,7 @@ function ta(c, lv, q) {
 
 function renderCards() {
   const box = $('#cards'); if (!box || !SNAP) return;
+  const fold = document.getElementById('idbox'); if (fold && !fold.open) return;       // folded: nothing to draw
   const syms = watched();
   for (const s of Object.keys(CHARTS)) if (!syms.includes(s)) { CHARTS[s].chart.remove(); delete CHARTS[s]; document.getElementById('card-' + s)?.remove(); }
   for (const s of syms) {
@@ -165,7 +181,7 @@ function renderCards() {
         const e21 = chart.addLineSeries({color: '#eb6834', lineWidth: 1, priceLineVisible: false, lastValueVisible: false});
         const vw = chart.addLineSeries({color: '#8e44ad', lineWidth: 2, lineStyle: 2, priceLineVisible: false, lastValueVisible: false});
         CHARTS[s] = {chart, candle, vol, e9, e21, vw, lines: []};
-        new ResizeObserver(() => chart.applyOptions({width: el.clientWidth})).observe(el);
+        new ResizeObserver(() => { if (el.clientWidth) chart.applyOptions({width: el.clientWidth}); }).observe(el);
       }
     }
     drawChart(s);
@@ -201,6 +217,199 @@ function drawChart(s) {
     C.lines.push(C.candle.createPriceLine({price: lv.bid, color: '#2a78d6', lineWidth: 2, lineStyle: 2, title: 'bid'}));
     C.lines.push(C.candle.createPriceLine({price: lv.tp, color: '#1f9d55', lineWidth: 2, lineStyle: 2, title: 'เป้า'}));
   }
+}
+
+// ---------- 14 Nov 2026: daily chart cards of the multi-day plan ----------
+// Data: bars doc 'daily' (live_monitor.BarWatcher <- premarket out/swing_daily.json): ~80 daily candles per stock on today's
+// price scale with SMA50 / SMA100 / RSI(2) of the rule, the live numbers 'lv' and today's opening price 'open'.
+// For looking at only: every level drawn here is the same number as in the table of the box above.
+let DAILY = {}, DCH = {}, FIBON = store.get('sr_fib', false), REF10 = store.get('sr_ref10', false);
+const tkz0 = p => p < 2 ? .01 : p < 5 ? .02 : p < 10 ? .05 : p < 25 ? .1 : p < 100 ? .25 : p < 200 ? .5 : p < 400 ? 1 : 2;
+const tickUp = x => { if (x == null) return null; const t = tkz0(x); return +(Math.floor(x / t + 1e-9) * t + t).toFixed(2); };
+const floorTick = x => { if (x == null) return null; const t = tkz0(x); return +(Math.floor(x / t + 1e-6) * t).toFixed(2); };
+const dstr = n => { const s = String(n); return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8); };
+const DCOL = {m5: '#2a78d6', m50: '#8a8a8a', m100: '#eb6834', rsi: '#8e44ad', bid: '#2a78d6', sell: '#1f9d55', fast: '#0e9aa7', entry: '#777', ref: '#d64545', fib: '#b8860b'};
+
+function swingRows() {
+  const S = SNAP?.swing, out = [], seen = new Set();
+  const add = (role, r) => { if (!seen.has(r.symbol) && DAILY[r.symbol]) { seen.add(r.symbol); out.push({s: r.symbol, role, r}); } };
+  if (S) {
+    for (const r of (S.tracker || [])) if (r.status === 'open') add('held', r);
+    for (const r of (S.cands || [])) add('cand', r);
+    for (const r of ((S.live || {}).prov || []).slice(0, 8)) add('prov', r);
+  }
+  for (const s of EXTRA) add('extra', Object.assign({symbol: s}, quoteOf(s) || {}));
+  return out.slice(0, 16);
+}
+function goDaily(sym) {
+  const el = document.getElementById('dcard-' + sym);
+  if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'}); else addExtra(sym);
+}
+function dailySeries(s, r) {
+  const D = DAILY[s]; if (!D || !D.t || D.t.length < 5) return null;
+  const n = D.t.length, bars = [], m5 = [], m50 = [], m100 = [], rsi = [];
+  for (let i = 0; i < n; i++) {
+    const t = dstr(D.t[i]);
+    bars.push({time: t, open: D.o[i], high: D.h[i], low: D.l[i], close: D.c[i]});
+    if (i >= 4) m5.push({time: t, value: (D.c[i] + D.c[i - 1] + D.c[i - 2] + D.c[i - 3] + D.c[i - 4]) / 5});
+    if (D.m50[i] != null) m50.push({time: t, value: D.m50[i]});
+    if (D.m100[i] != null) m100.push({time: t, value: D.m100[i]});
+    if (D.r[i] != null) rsi.push({time: t, value: D.r[i]});
+  }
+  const g0 = quoteOf(s) || {}, pick = k => r && r[k] != null ? r[k] : g0[k];       // the row of the box first, the group table for what it lacks
+  const q = {last: pick('last'), high: pick('high'), low: pick('low')}, day = String(SNAP?.time || '').slice(0, 10), lv = D.lv;   // snap.session is am/pm, the date is in snap.time
+  let today = null;
+  if (q && q.last != null && /^\d{4}-\d\d-\d\d$/.test(day) && day > bars[n - 1].time) {          // today's candle moves with the live price
+    const p = q.last, pc = lv && lv.pc ? lv.pc : D.c[n - 1];
+    const hi = Math.max(q.high != null ? q.high : p, p), lo = Math.min(q.low != null ? q.low : p, p);
+    const op = Math.min(Math.max(D.open != null ? D.open : pc, lo), hi);      // open not known yet: yesterday's close, kept inside today's range
+    bars.push({time: day, open: op, high: hi, low: lo, close: p});
+    today = {p, hi, lo, pc, openKnown: D.open != null};
+    m5.push({time: day, value: (D.c[n - 1] + D.c[n - 2] + D.c[n - 3] + D.c[n - 4] + p) / 5});
+    if (lv) {
+      today.m50 = (lv.s49 + p) / 50; today.m100 = (lv.s99 + p) / 100;
+      m50.push({time: day, value: today.m50}); m100.push({time: day, value: today.m100});
+      const d = p - lv.pc, up = .5 * lv.up + .5 * Math.max(d, 0), dn = .5 * lv.dn + .5 * Math.max(-d, 0);
+      if (up + dn > 0) { today.rsi = 100 * up / (up + dn); rsi.push({time: day, value: today.rsi}); }
+    }
+    let tr = Math.max(hi - lo, Math.abs(hi - pc), Math.abs(lo - pc)), k = 1;   // ATR(14) with today's range, as the rule computes it at the close
+    for (let i = n - 1; i >= 1 && k < 14; i--, k++) tr += Math.max(D.h[i] - D.l[i], Math.abs(D.h[i] - D.c[i - 1]), Math.abs(D.l[i] - D.c[i - 1]));
+    today.atr = tr / k / p;
+  }
+  const i = n - 1;
+  const cur = today ? {p: today.p, m50: today.m50, m100: today.m100, rsi: today.rsi} : {p: D.c[i], m50: D.m50[i], m100: D.m100[i], rsi: D.r[i]};
+  return {D, bars, m5, m50, m100, rsi, today, cur, n};
+}
+// Fibonacci extension of the last upswing inside the chart: lowest low A before the highest high B of the last 60 sessions
+function fibLevels(D) {
+  const n = D.t.length, w = 60, a0 = Math.max(0, n - w); let iB = a0;
+  for (let i = a0; i < n; i++) if (D.h[i] >= D.h[iB]) iB = i;
+  let iA = Math.max(0, iB - w);
+  for (let i = iA; i <= iB; i++) if (D.l[i] < D.l[iA]) iA = i;
+  const A = D.l[iA], B = D.h[iB]; if (!(B > A) || iA === iB) return null;
+  return {A, B, tA: dstr(D.t[iA]), tB: dstr(D.t[iB]), lv: [['100%', B], ['127.2%', A + 1.272 * (B - A)], ['161.8%', A + 1.618 * (B - A)]]};
+}
+// the levels of one card: [{price, color, style, width, title}] + the text line under the header (same numbers as the table)
+function dailyLevels(X, role, r) {
+  const S = SNAP?.swing || {}, R = S.rule || {}, cost = R.cost || 0.0017, hold = R.hold || 10, D = X.D, lv = D.lv, T = X.today;
+  const netg = (sell, buy) => sell && buy ? sell * (1 - cost) / (buy * (1 + cost)) - 1 : null;
+  const g = (sell, buy) => { const v = netg(sell, buy); return v == null ? '' : ' <span style="font-size:12px">' + pct(v, 1) + '</span>'; };
+  const L = [], txt = [], hiT = r.high != null ? r.high : r.last;
+  const sellToday = r.sell_plan && r.sell_plan[0] ? r.sell_plan[0].px : tickUp(r.trig != null ? r.trig : lv && lv.s4 ? lv.s4 / 4 : null);
+  const touch = lvl => lvl == null || hiT == null ? '' : hiT >= lvl ? ' <span class="pos">แตะแล้ว</span>' : ' <span class="mut">ยังไม่ถึง</span>';
+  let chip = '', base = null;
+  if (role === 'held') {
+    base = r.entry; chip = `<span class="tchip tg">ถืออยู่ วันที่ ${(r.days || 0) + 1}/${hold}</span>`;
+    const fp = r.fast_px != null ? r.fast_px : r.sig_close;
+    L.push({price: r.entry, color: DCOL.entry, style: 0, width: 1, title: 'ราคาเข้า'});
+    txt.push(`ราคาเข้า <b>${num(r.entry)}</b>`);
+    if (sellToday != null) { L.push({price: sellToday, color: DCOL.sell, style: 2, width: 2, title: 'ขายวันนี้'});
+      txt.push((r.last_day ? '<b class="neg">วันสุดท้าย: ขายที่ราคาปิด</b> · ระดับวันนี้ ' : 'ตั้งขายวันนี้ ') + `<b>${num(sellToday)}</b>${g(sellToday, r.entry)}${touch(sellToday)}`); }
+    if (fp != null && !r.fast_day) { L.push({price: fp, color: DCOL.fast, style: 2, width: 1, title: 'ขายเร็ว'}); txt.push(`ขายเร็ว <b>${num(fp)}</b>${g(fp, r.entry)}${touch(fp)}`); }
+  } else if (role === 'cand') {
+    base = r.bid; chip = r.hit ? '<span class="tchip tg">ถึงราคาตั้งซื้อวันนี้</span>' : r.pick !== false ? '<span class="tchip tn">ตั้งซื้อวันนี้</span>' : '<span class="tchip tn">สำรอง</span>';
+    if (r.bid != null) L.push({price: r.bid, color: DCOL.bid, style: 2, width: 2, title: 'ตั้งซื้อ'});
+    if (r.bid2 != null) L.push({price: r.bid2, color: DCOL.bid, style: 1, width: 1, title: 'ลึก'});
+    txt.push(`ตั้งซื้อ <b>${num(r.bid)}</b> · ลึก ${num(r.bid2)}` + (r.hit ? ` <span class="pos">ถึงแล้ว${r.hit2 ? ' (ถึงราคาลึกด้วย)' : ''}</span>` : r.last != null && r.bid ? ` <span class="mut">ห่าง ${((r.last / r.bid - 1) * 100).toFixed(1)}%</span>` : ''));
+    if (r.sig_close != null) L.push({price: r.sig_close, color: DCOL.fast, style: 2, width: 1, title: 'ขายเร็ว'});
+    if (sellToday != null) L.push({price: sellToday, color: DCOL.sell, style: 2, width: 2, title: 'ขายวันนี้'});
+    txt.push((r.hit ? 'จุดขาย: ' : 'ถ้าได้ของ: ') + `ขายเร็ว <b>${num(r.sig_close)}</b>${g(r.sig_close, r.bid)}` + (sellToday == null ? '' : ` · ระดับ SMA5 วันนี้ <b>${num(sellToday)}</b>${g(sellToday, r.bid)}`));
+  } else {
+    if (role === 'prov') chip = '<span class="tchip tb">สัญญาณชั่วคราว รอราคาปิด</span>';
+    else chip = `<span class="tchip tn">เพิ่มเอง</span> <button class="mini" onclick="removeExtra('${X.s}')">ปิด</button>`;
+    if (role === 'prov' && T && T.atr) {
+      const b1 = floorTick(T.p * (1 - (R.k1 || .25) * T.atr)), b2 = floorTick(T.p * (1 - (R.k2 || .5) * T.atr));
+      L.push({price: b1, color: DCOL.bid, style: 2, width: 1, title: 'ตั้งซื้อ≈'}); L.push({price: b2, color: DCOL.bid, style: 1, width: 1, title: 'ลึก≈'});
+      txt.push(`ถ้าปิดที่ราคานี้ วันทำการถัดไปตั้งซื้อราว <b>${num(b1)}</b> · ลึกราว ${num(b2)}`);
+    }
+    if (sellToday != null) { L.push({price: sellToday, color: DCOL.sell, style: 2, width: 1, title: 'SMA5 วันนี้'}); txt.push(`ระดับ SMA5 วันนี้ ${num(sellToday)}`); }
+  }
+  if (REF10 && base) L.push({price: +(base * .9).toFixed(2), color: DCOL.ref, style: 1, width: 1, title: '−10%'});
+  const incl = L.map(x => x.price).filter(v => v != null && X.cur.p && Math.abs(v / X.cur.p - 1) < .3);
+  const fib = FIBON ? fibLevels(D) : null;
+  if (fib) {                                              // far levels stay out of the automatic price range (they would flatten the candles): read them in the text line
+    for (const [nm, v] of fib.lv) { L.push({price: +v.toFixed(2), color: DCOL.fib, style: 1, width: 1, title: 'Fib ' + nm}); if (X.cur.p && v / X.cur.p - 1 < .12) incl.push(v); }
+    txt.push('<span class="mut">Fibonacci extension: ' + fib.lv.map(([nm, v]) => nm + ' ' + num(v)).join(' · ') + '</span>');
+  }
+  return {L, txt, chip, incl, fib};
+}
+function dailyMarkers(X, role, r, fib) {
+  const M = [], D = X.D, ts = X.bars.map(b => b.time), has = t => t && ts.includes(t);
+  if (r.sig && has(r.sig)) M.push({time: r.sig, position: 'aboveBar', color: DCOL.rsi, shape: 'arrowDown', text: 'สัญญาณ'});
+  if (role === 'held' && r.sig) { const i = ts.indexOf(r.sig); if (i >= 0 && i + 1 < ts.length) M.push({time: ts[i + 1], position: 'belowBar', color: DCOL.entry, shape: 'arrowUp', text: 'เข้า'}); }
+  if (role === 'cand' && r.hit && X.today) M.push({time: ts[ts.length - 1], position: 'belowBar', color: DCOL.bid, shape: 'arrowUp', text: 'ถึงราคา'});
+  if (fib) { if (has(fib.tA)) M.push({time: fib.tA, position: 'belowBar', color: DCOL.fib, shape: 'circle', text: 'A'}); if (has(fib.tB)) M.push({time: fib.tB, position: 'aboveBar', color: DCOL.fib, shape: 'circle', text: 'B'}); }
+  return M.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+}
+function renderDaily() {
+  const box = $('#dcards'); if (!box || !SNAP) return;
+  const rows = swingRows(), syms = rows.map(x => x.s), note = $('#dnone');
+  if (note) note.hidden = rows.length > 0;
+  if (note && !rows.length) note.textContent = !SNAP.swing ? 'วันนี้ไม่มีข้อมูลแผนถือหลายวัน' : Object.keys(DAILY).length ? 'ไม่มีหุ้นในแผนถือหลายวันตอนนี้' :
+    'ยังไม่มีข้อมูลแท่งรายวัน (เริ่มแสดงเมื่อระบบ Live ของวันทำการรอบถัดไปเริ่มทำงาน)';
+  for (const s of Object.keys(DCH)) if (!syms.includes(s)) { DCH[s].chart.remove(); delete DCH[s]; document.getElementById('dcard-' + s)?.remove(); }
+  for (const {s, role, r} of rows) {
+    let d = document.getElementById('dcard-' + s);
+    if (!d) {
+      d = document.createElement('div'); d.className = 'card chartcard'; d.id = 'dcard-' + s;
+      d.innerHTML = `<div class="ch-head" id="dh-${s}"></div><div class="dlv" id="dl-${s}"></div><div class="dwrap"><div class="dchart" id="dc-${s}"></div><div class="rsitag" id="dr-${s}"></div></div>`;
+      box.appendChild(d);
+      if (LW) {
+        const el = document.getElementById('dc-' + s), css = getComputedStyle(document.documentElement);
+        const chart = LW.createChart(el, {height: 340, layout: {background: {color: 'transparent'}, textColor: css.getPropertyValue('--mut').trim() || '#777'},
+          grid: {vertLines: {visible: false}, horzLines: {color: css.getPropertyValue('--line').trim() || '#ddd'}},
+          timeScale: {borderVisible: false, rightOffset: 3}, crosshair: {mode: 0},
+          rightPriceScale: {borderVisible: false, scaleMargins: {top: 0.06, bottom: 0.25}}});
+        const candle = chart.addCandlestickSeries({upColor: '#1f9d55', downColor: '#d64545', borderVisible: false, wickUpColor: '#1f9d55', wickDownColor: '#d64545',
+          autoscaleInfoProvider: orig => {            // keep the plan levels inside the visible price range
+            const a = orig(), inc = DCH[s]?.incl || [];
+            if (a && a.priceRange) for (const v of inc) { a.priceRange.minValue = Math.min(a.priceRange.minValue, v); a.priceRange.maxValue = Math.max(a.priceRange.maxValue, v); }
+            return a; }});
+        const line = (color, w, st) => chart.addLineSeries({color, lineWidth: w, lineStyle: st, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+        const m100 = line(DCOL.m100, 2, 0), m50 = line(DCOL.m50, 1, 2), m5 = line(DCOL.m5, 1, 0);
+        // RSI(2) in its own band at the bottom (hidden 0-100 scale): dashed line = 10, thin lines = 0 and 100
+        const rsi = chart.addLineSeries({color: DCOL.rsi, lineWidth: 1, priceScaleId: 'rsi', priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+          priceFormat: {type: 'price', precision: 0, minMove: 1}, autoscaleInfoProvider: () => ({priceRange: {minValue: 0, maxValue: 100}})});
+        chart.priceScale('rsi').applyOptions({scaleMargins: {top: 0.82, bottom: 0.02}});
+        const edge = css.getPropertyValue('--line').trim() || '#ddd';
+        rsi.createPriceLine({price: 10, color: DCOL.rsi, lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: ''});
+        rsi.createPriceLine({price: 100, color: edge, lineWidth: 1, lineStyle: 0, axisLabelVisible: false, title: ''});
+        rsi.createPriceLine({price: 0, color: edge, lineWidth: 1, lineStyle: 0, axisLabelVisible: false, title: ''});
+        const C = DCH[s] = {chart, candle, m5, m50, m100, rsi, lines: [], incl: [], n: 0, touched: false};
+        C.span = () => el.clientWidth < 420 ? 40 : 60;         // sessions in view: fewer on a phone so the level labels do not cover the candles
+        // the price axis has no meaning beside the RSI band: cover that corner with the RSI label
+        C.tag = () => { const t = document.getElementById('dr-' + s); if (!t) return; let w = 56, b = 26;
+          try { w = chart.priceScale('right').width() || w; b = chart.timeScale().height() || b; } catch (e) {}
+          t.style.width = w + 'px'; t.style.bottom = b + 'px'; t.style.height = Math.round((340 - b) * .245) + 'px'; };
+        for (const ev of ['wheel', 'mousedown', 'touchstart']) el.addEventListener(ev, () => { C.touched = true; }, {passive: true});
+        // the card width changes when cards are added: keep the last 60 sessions in view until the reader zooms or drags
+        new ResizeObserver(() => { if (el.clientWidth) { chart.applyOptions({width: el.clientWidth}); if (!C.touched && C.n) chart.timeScale().setVisibleLogicalRange({from: C.n - C.span(), to: C.n + 3}); C.tag(); } }).observe(el);
+      }
+    }
+    box.appendChild(d);                                    // keep the order: held, today's orders, provisional, added by hand
+    drawDaily(s, role, r);
+  }
+}
+function drawDaily(s, role, r) {
+  const X = dailySeries(s, r); if (!X) return;
+  X.s = s;
+  const V = dailyLevels(X, role, r), c = X.cur, T = X.today;
+  const ck = (ok, t) => ok == null ? '' : `<span class="ck ${ok ? 'y' : 'n'}">${ok ? '✓' : '✗'} ${t}</span>`;
+  const code = r.code || quoteOf(s)?.code || '';
+  const hd = document.getElementById('dh-' + s);
+  if (hd) hd.innerHTML = `<b>${esc(s)}</b>${code ? ` <span class="mut" style="font-size:12px">(${esc(code)})</span>` : ''} ${V.chip} <span class="mut">ล่าสุด</span> <b>${num(c.p)}</b>${T ? ' ' + pct(T.p / T.pc - 1) : ''}
+    <span class="checks" style="margin:0">${ck(c.m100 == null ? null : c.p > c.m100, 'ราคา > SMA100' + (c.m100 ? ' (' + pct(c.p / c.m100 - 1, 1) + ')' : ''))}${ck(c.m50 == null || c.m100 == null ? null : c.m50 > c.m100, 'SMA50 > SMA100')}${role === 'held' ? (c.rsi == null ? '' : `<span class="mut">RSI2 ${num(c.rsi, 1)}</span>`) : ck(c.rsi == null ? null : c.rsi < 10, 'RSI2 ' + (c.rsi == null ? '' : num(c.rsi, 1)) + ' < 10')}</span>`;
+  const dl = document.getElementById('dl-' + s);
+  if (dl) dl.innerHTML = V.txt.join(' · ') + (T && !T.openKnown ? ' <span class="mut" style="font-size:11.5px">· แท่งวันนี้ยังไม่ทราบราคาเปิด ใช้ราคาปิดวานแทน</span>' : '');
+  const C = DCH[s]; if (!C) return;
+  C.incl = V.incl;
+  C.candle.setData(X.bars); C.m5.setData(X.m5); C.m50.setData(X.m50); C.m100.setData(X.m100); C.rsi.setData(X.rsi);
+  for (const l of C.lines) C.candle.removePriceLine(l);
+  C.lines = V.L.filter(x => x.price != null).map(x => C.candle.createPriceLine({price: x.price, color: x.color, lineWidth: x.width, lineStyle: x.style, axisLabelVisible: true, title: x.title}));
+  C.candle.setMarkers(dailyMarkers(X, role, r, V.fib));
+  if (!C.touched && C.n !== X.bars.length) C.chart.timeScale().setVisibleLogicalRange({from: X.bars.length - C.span(), to: X.bars.length + 3});
+  C.n = X.bars.length;
+  { const t = document.getElementById('dr-' + s); if (t) t.innerHTML = 'RSI2' + (c.rsi == null ? '' : '<br><b>' + num(c.rsi, 1) + '</b>'); C.tag(); }
 }
 
 // ---------- tables ----------
@@ -523,7 +732,7 @@ function swingHtml() {
   const R = S.rule || {}, cost = R.cost || 0.0017, hold = R.hold || 10, maxb = R.max_bids || 5;
   const tchip = t => t === 'A' ? '<span class="tchip tg">ระดับ A</span>' : '<span class="tchip tn">ระดับ B</span>';
   const tdesc = t => t === 'A' ? 'ตลาดถูกขายทั้งกระดาน (ระดับ A: สถิติดีกว่า)' : 'ย่อเฉพาะตัว (ระดับ B: สถิติอ่อนกว่า)';
-  const nm = r => `<a href="#" onclick="addExtra('${r.symbol}');return false"><b>${esc(r.symbol)}</b></a> <span class="mut" style="font-size:12px">(${esc(r.code || '')})</span>`;
+  const nm = r => `<a href="#" onclick="goDaily('${r.symbol}');return false" title="ดูกราฟรายวัน"><b>${esc(r.symbol)}</b></a> <span class="mut" style="font-size:12px">(${esc(r.code || '')})</span>`;
   const sec = r => r.sec_n ? `${r.sec_low}/${r.sec_n}` : '<span class="mut">–</span>';
   const secLine = a => (a || []).slice(0, 6).map(x => `${esc(x.code)} ${x.low}/${x.n}`).join(' · ');
   const tkz = p => p < 2 ? .01 : p < 5 ? .02 : p < 10 ? .05 : p < 25 ? .1 : p < 100 ? .25 : p < 200 ? .5 : p < 400 ? 1 : 2;
@@ -574,8 +783,10 @@ function swingHtml() {
         <td>${px == null ? '–' : num(px)}<br>${sm(pct(r.chg))}</td><td><b>${pct(ret)}</b></td><td class="l" style="white-space:nowrap">${fast}</td><td class="l" style="white-space:normal;min-width:255px">${sell}</td></tr>`; }).join('') + '</table></div>';
   if (D.length) o += `<div class="mut" style="margin-top:4px">ปิดแล้วใน 5 วันทำการล่าสุด: ${D.map(r => `${esc(r.symbol)} ${pct(r.ret, 1)} (${r.days} วัน${r.fast_ret == null ? '' : ' · ขายเร็ว ' + pct(r.fast_ret, 1) + ' ใน ' + r.fast_days + ' วัน'})`).join(' · ')}</div>`;
   // 3) provisional new signals at the current prices
-  if (L.prov) o += `<p style="margin:10px 0 4px"><b>สัญญาณใหม่ถ้าปิดที่ราคาตอนนี้</b> <span class="mut">ชั่วคราว ยืนยันเมื่อปิดตลาด (หลัง 16:00 ตรงกับราคาปิดราว 9 ใน 10) · ${L.n_prov || 0} ตัว · รายการตั้งซื้อจริงออกเช้าวันทำการถัดไป</span></p>` +
-    (L.prov.length ? '<div>' + L.prov.map(r => `${nm(r)} <span class="mut" style="font-size:12px">RSI2 ${num(r.rsi2, 1)}${r.sec_n ? ' · กลุ่มย่อ ' + r.sec_low + '/' + r.sec_n : ''}</span> ${pct(r.chg, 1)}`).join(' · ') + '</div>' : '<div class="mut">ยังไม่มี</div>');
+  // 14 Nov 2026: a watch list, not an order for today; a stock already held (or reached today) only repeats its signal
+  const heldNow = new Set(T.map(r => r.symbol).concat(C.filter(r => r.hit).map(r => r.symbol)));
+  if (L.prov) o += `<p style="margin:10px 0 4px"><b>สัญญาณใหม่ถ้าปิดที่ราคาตอนนี้</b> <span class="mut">รายชื่อเฝ้าดู ยังไม่ใช่สัญญาณซื้อของวันนี้ · ${L.n_prov || 0} ตัว · คิดจากราคาล่าสุดแทนราคาปิด จึงเปลี่ยนได้จนตลาดปิด (หลัง 16:00 ตรงกับราคาปิดราว 9 ใน 10) · ตัวที่ราคาปิดยังเข้าเกณฑ์ จะขึ้นในตาราง "ตั้งซื้อวันนี้" เช้าวันทำการถัดไป พร้อมราคาตั้งซื้อ</span></p>` +
+    (L.prov.length ? '<div>' + L.prov.map(r => `${nm(r)} <span class="mut" style="font-size:12px">RSI2 ${num(r.rsi2, 1)}${r.sec_n ? ' · กลุ่มย่อ ' + r.sec_low + '/' + r.sec_n : ''}${heldNow.has(r.symbol) ? ' · ถืออยู่แล้ว: สัญญาณซ้ำ ไม่ตั้งเพิ่ม' : ''}</span> ${pct(r.chg, 1)}`).join(' · ') + '</div>' : '<div class="mut">ยังไม่มี</div>');
   // 13 Nov 2026: practical "how to use" note (execution facts: _work/review_20261112/sector_test, g6-g8); the test figures are folded below
   const HB = (t, a) => `<div><b>${t}</b><ul style="margin:3px 0 0;padding-left:18px">${a.map(x => '<li>' + x + '</li>').join('')}</ul></div>`;
   return o + `<div style="margin-top:12px;border-top:1px solid var(--line, #ddd);padding-top:8px"><b>วิธีใช้ตาราง</b> <span class="mut">กติกาของแผนทดลองนี้ ตัวเลขมาจากผลทดสอบย้อนหลัง หักค่าซื้อขายแล้ว</span>
@@ -651,11 +862,12 @@ async function loadSnap() {
     { const pt = document.getElementById('pacetop'); if (pt) pt.innerHTML = paceHtml(); }
     { const eb = document.getElementById('earnbox'); if (eb) eb.innerHTML = earnHtml(); }
     { const sb = document.getElementById('swing'); if (sb) sb.innerHTML = swingHtml(); }
-    renderCards();
+    renderDaily(); renderCards();
   } catch (e) { $('#feed').textContent = 'รอข้อมูลจาก live_monitor…'; }
 }
 async function loadBars() {
-  try { const j = await SRD.get('bars'); BARS = j.bars || {}; $('#barsat').textContent = 'แท่งเทียนอัปเดต ' + j.time;
+  try { const j = await SRD.get('bars'); BARS = j.bars || {}; DAILY = j.daily || {}; $('#barsat').textContent = 'แท่งเทียนอัปเดต ' + j.time;
+        renderDaily();
         if (SNAP) $('#plan').innerHTML = planHtml();             // activity column needs the bars
         for (const s of Object.keys(CHARTS)) drawChart(s); } catch (e) {}
 }
@@ -664,6 +876,10 @@ document.querySelectorAll('[data-iv]').forEach(b => b.addEventListener('click', 
 { const ou = document.getElementById('onlyup'); if (ou) { ou.checked = ONLYUP; ou.addEventListener('change', () => { ONLYUP = ou.checked; store.set('sr_onlyup', ONLYUP); if (SNAP) $('#scan').innerHTML = strongHtml(); }); } }
 { const oh = document.getElementById('onlyha'); if (oh) { oh.checked = ONLYHA; oh.addEventListener('change', () => { ONLYHA = oh.checked; store.set('sr_onlyha', ONLYHA); if (SNAP) $('#scan').innerHTML = strongHtml(); }); } }
 { const om = document.getElementById('onlymacd'); if (om) { om.checked = ONLYMACD; om.addEventListener('change', () => { ONLYMACD = om.checked; store.set('sr_onlymacd', ONLYMACD); if (SNAP) $('#scan').innerHTML = strongHtml(); }); } }
+{ const fb = document.getElementById('fibon'); if (fb) { fb.checked = FIBON; fb.addEventListener('change', () => { FIBON = fb.checked; store.set('sr_fib', FIBON); renderDaily(); }); } }
+{ const rf = document.getElementById('ref10'); if (rf) { rf.checked = REF10; rf.addEventListener('change', () => { REF10 = rf.checked; store.set('sr_ref10', REF10); renderDaily(); }); } }
+{ const ib = document.getElementById('idbox'); if (ib) { ib.open = store.get('sr_idbox', false);
+    ib.addEventListener('toggle', () => { store.set('sr_idbox', ib.open); if (ib.open) { renderCards(); for (const s of Object.keys(CHARTS)) CHARTS[s].chart.timeScale().fitContent(); } }); } }
 setIv(INTERVAL);
 loadSnap(); loadBars(); loadGlobal();
 setInterval(loadSnap, REFRESH); setInterval(loadBars, 15000); setInterval(loadGlobal, 60000);
