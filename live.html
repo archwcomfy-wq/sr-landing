@@ -224,7 +224,7 @@ function drawChart(s) {
 // price scale with SMA50 / SMA100 / RSI(2) of the rule, the live numbers 'lv' and today's opening price 'open'.
 // For looking at only: every level drawn here is the same number as in the table of the box above.
 let DAILY = {}, DCH = {}, FIBON = store.get('sr_fib', false), REF10 = store.get('sr_ref10', false);
-const tkz0 = p => p < 2 ? .01 : p < 5 ? .02 : p < 10 ? .05 : p < 25 ? .1 : p < 100 ? .25 : p < 200 ? .5 : p < 400 ? 1 : 2;
+const tkz0 = p => p < 2 ? .01 : p < 10 ? .02 : p < 25 ? .05 : p < 50 ? .1 : p < 100 ? .25 : p < 200 ? .5 : p < 400 ? 1 : 2;   // SET table from 16 Nov 2026
 const tickUp = x => { if (x == null) return null; const t = tkz0(x); return +(Math.floor(x / t + 1e-9) * t + t).toFixed(2); };
 const floorTick = x => { if (x == null) return null; const t = tkz0(x); return +(Math.floor(x / t + 1e-6) * t).toFixed(2); };
 const dstr = n => { const s = String(n); return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8); };
@@ -737,7 +737,7 @@ function swingHtml() {
   const nm = r => `<a href="#" onclick="goDaily('${r.symbol}');return false" title="ดูกราฟรายวัน"><b>${esc(r.symbol)}</b></a> <span class="mut" style="font-size:12px">(${esc(r.code || '')})</span>`;
   const sec = r => r.sec_n ? `${r.sec_low}/${r.sec_n}` : '<span class="mut">–</span>';
   const secLine = a => (a || []).slice(0, 6).map(x => `${esc(x.code)} ${x.low}/${x.n}`).join(' · ');
-  const tkz = p => p < 2 ? .01 : p < 5 ? .02 : p < 10 ? .05 : p < 25 ? .1 : p < 100 ? .25 : p < 200 ? .5 : p < 400 ? 1 : 2;
+  const tkz = p => p < 2 ? .01 : p < 10 ? .02 : p < 25 ? .05 : p < 50 ? .1 : p < 100 ? .25 : p < 200 ? .5 : p < 400 ? 1 : 2;   // SET table from 16 Nov 2026
   const minClose = x => { if (x == null) return null; const t = tkz(x); return +(Math.floor(x / t + 1e-9) * t + t).toFixed(2); };
   const netg = (sell, buy) => sell && buy ? sell * (1 - cost) / (buy * (1 + cost)) - 1 : null;
   const sm = h => `<span style="font-size:12px">${h}</span>`;
