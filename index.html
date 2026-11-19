@@ -31,6 +31,7 @@ html,body{height:100%}body{display:flex;flex-direction:column}#app{display:flex;
 .side-head span{display:block;font-size:12px;margin-top:5px;opacity:.95}
 .side button{font:inherit;text-align:left;font-size:13.5px;line-height:1.35;padding:8px 10px;border:1px solid var(--lt-line);border-radius:10px;background:var(--card);color:var(--fg);cursor:pointer}
 .side button small{display:block;font-size:11px;color:var(--mut);margin-top:2px}.side button.on{background:var(--lt);border-color:var(--lt);color:var(--lt-on);font-weight:600}.side button.on small{color:var(--lt-on);opacity:.9;font-weight:400}
+.side button small .inz{color:var(--pos);font-weight:700}.side button small .noz{opacity:.75}.side button.on small .inz{color:inherit;text-decoration:underline}
 .side .back{margin-top:auto;font-size:12px;color:var(--lt-ink);padding:6px 4px}
 #cbanner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 16px;background:var(--lt-bg);border-bottom:2px solid var(--lt);color:var(--lt-ink);font-size:13.5px}
 #cbanner b{color:var(--lt)}#cbanner .sp{flex:1}#cbanner button{font:inherit;font-size:13px;padding:4px 12px;border:1px solid var(--acc);border-radius:999px;background:var(--card);color:var(--acc);cursor:pointer}
@@ -159,9 +160,19 @@ function pick(tab) {
 function apply() { if (SIDE) return; if (TAB !== 'members') show(TAB === 'auto' ? (STAGE?.stage || 'premarket') : TAB); }
 const NOSIDE = '<p style="font:15px system-ui;padding:20px;color:#777">ยังไม่มีข้อมูลหน้านี้ (หน้าจะขึ้นเมื่อส่งผลการคำนวณรอบล่าสุดจากเครื่อง)</p>';
 const CDOC = {};                                     // key -> {at, html}: switching between the two pages needs no re-download
-function stamp(key, at) {
+const CZ = {};                                       // key -> stocks in the buy zone of that page (sr_docs.data, written by push_cycle.py)
+function stamp(key, at, z) {
   const el = document.querySelector(`[data-side="${key}"] small`); if (!el || !at) return;
-  el.textContent = 'อัปเดต ' + new Date(at).toLocaleString('th-TH', {timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+  if (z && Array.isArray(z.inzone)) CZ[key] = z;
+  z = CZ[key];
+  const when = 'อัปเดต ' + new Date(at).toLocaleString('th-TH', {timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false});
+  if (!z) { el.textContent = when; return; }
+  // 19 Nov 2026: names of the stocks in the buy zone, in green, before the update time (the overview radars show the count)
+  const sym = a => a.map(x => String(x).replace(/[^A-Za-z0-9&.\-]/g, ''));
+  const names = sym(z.inzone), head = z.detail ? (names.length ? names.slice(0, 4).join(' ') + (names.length > 4 ? ' +' + (names.length - 4) : '') : '') : (names.length ? 'ในโซน ' + names.length + ' ตัว' : '');
+  el.innerHTML = (head ? `<b class="inz">${head}</b> · ` : '<span class="noz">ยังไม่มีตัวในโซน</span> · ') + when;
+  const b = el.closest('button');
+  if (b) b.title = 'ในโซนสะสม: ' + (names.length ? names.slice(0, 40).join(' ') : 'ไม่มี') + (z.near && z.near.length ? ' · ใกล้โซน: ' + sym(z.near).slice(0, 20).join(' ') : '') + (z.asof ? ' · ราคาปิด ' + z.asof : '');
 }
 async function side(key) {
   SIDE = key;
@@ -170,10 +181,10 @@ async function side(key) {
   $('#view').hidden = true; $('#members').hidden = true;
   const f = $('#cview'); f.hidden = false; $('#cbanner').hidden = false;
   try {
-    const {data: m, error} = await SB.from('sr_docs').select('updated_at').eq('key', key).maybeSingle();
+    const {data: m, error} = await SB.from('sr_docs').select('updated_at,data').eq('key', key).maybeSingle();
     if (error) throw error;
     if (!m) throw new Error('no ' + key);
-    stamp(key, m.updated_at);
+    stamp(key, m.updated_at, m.data);
     if (CSHOWN === key + m.updated_at) return;
     if (CDOC[key]?.at !== m.updated_at) {
       CSHOWN = ''; f.srcdoc = '<p style="font:15px system-ui;padding:20px;color:#777">กำลังโหลด…</p>';
@@ -186,10 +197,12 @@ async function side(key) {
 }
 async function sideStamps() {
   const keys = [...document.querySelectorAll('[data-side]')].map(b => b.dataset.side);
-  const {data} = await SB.from('sr_docs').select('key,updated_at').in('key', keys);
-  (data || []).forEach(r => stamp(r.key, r.updated_at));
+  const {data} = await SB.from('sr_docs').select('key,updated_at,data').in('key', keys);
+  (data || []).forEach(r => stamp(r.key, r.updated_at, r.data));
 }
+let POLLN = 0;
 async function poll() {
+  if (++POLLN % 60 === 0) sideStamps().catch(() => {});     // menu lines (update time, stocks in the zone) every 10 minutes
   try {
     const d = await srDoc('landing', 'data'), j = d.data;
     STAGE = j; $('#stage').textContent = j.label + ' · อัปเดต ' + String(j.updated).slice(5, 16) + (j.note ? ' · ' + j.note : '');
