@@ -200,12 +200,28 @@ async function sideStamps() {
   const {data} = await SB.from('sr_docs').select('key,updated_at,data').in('key', keys);
   (data || []).forEach(r => stamp(r.key, r.updated_at, r.data));
 }
+// 24 Nov 2026: during Live the line showed only when the stage began (09:50), which read as "Live stopped at 09:50".
+// It now says when the stage began and the time of the latest live data, with a warning when that time stops moving.
+function ageHtml(t, ph) {
+  if (!t) return '';
+  const age = (Date.now() - new Date(String(t).replace(' ', 'T') + '+07:00')) / 1000;
+  const run = /^(open|pre)/.test(String(ph || ''));   // phases in which the data should keep moving
+  return ' · ข้อมูลล่าสุด ' + String(t).slice(11, 19) + (run && age > 180 ? ` <b style="color:#c0392b">· ข้อมูลไม่ขยับ ${Math.round(age / 60)} นาที</b>` : '');
+}
+function stageLine(j, extra) {
+  const w = j.stage === 'live' ? ' · เริ่ม ' + String(j.updated).slice(11, 16) : ' · อัปเดต ' + String(j.updated).slice(5, 16);
+  $('#stage').textContent = j.label + w + (j.note ? ' · ' + j.note : '');
+  if (extra) $('#stage').insertAdjacentHTML('beforeend', extra);
+}
 let POLLN = 0;
 async function poll() {
   if (++POLLN % 60 === 0) sideStamps().catch(() => {});     // menu lines (update time, stocks in the zone) every 10 minutes
   try {
     const d = await srDoc('landing', 'data'), j = d.data;
-    STAGE = j; $('#stage').textContent = j.label + ' · อัปเดต ' + String(j.updated).slice(5, 16) + (j.note ? ' · ' + j.note : '');
+    STAGE = j;
+    let extra = '';
+    if (j.stage === 'live') { try { const {data: L} = await SB.from('sr_docs').select('t:data->>time,ph:data->>phase').eq('key', 'live_latest').maybeSingle(); if (L) extra = ageHtml(L.t, L.ph); } catch (e) {} }
+    stageLine(j, extra);
     $('#dot').className = 'dot on';
   } catch (e) { $('#dot').className = 'dot'; $('#stage').textContent = 'ยังไม่มีข้อมูลจากเครื่อง หรือเชื่อมต่อไม่ได้'; }
   apply();
