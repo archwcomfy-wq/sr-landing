@@ -727,15 +727,32 @@ function earnHtml() {
     และหุ้นที่โบรกติดตามมากอาจขยับต่างจากนี้มาก เช่น HANA 12 พ.ย. ผลทางสถิติแค่ดีกว่าคาดเล็กน้อย แต่ราคา +20% เพราะกำไรเกินประมาณการโบรก · งบที่ออกหลัง premarket 07:35 จะเข้าในวันถัดไป</div>`;
 }
 
+// 25 Nov 2026: SET index RSI(2) (snap.set_r2 from live_monitor). Information shown beside the boxes; not part of any rule.
+// Base rates: cap-weighted index rebuilt from all common stocks (daily returns match the SET index, 35 days checked), Jul 2021 - Nov 2026.
+function setR2Html() {
+  const R = SNAP.set_r2;
+  if (!R || R.r2 == null) return '';
+  const col = v => v == null ? '' : v < 5 ? 'pos' : v < 10 ? 'warn' : 'mut';
+  const b = v => v == null ? '–' : `<b class="${col(v)}">${v.toFixed(1)}</b>`;
+  const day = R.asof && R.asof !== 'prev' ? `${+R.asof.slice(8, 10)}/${+R.asof.slice(5, 7)}` : 'วันทำการก่อน';
+  return `<div class="setr2" style="margin:2px 0 6px;font-size:13px">RSI2 ของ SET <span class="mut">(ข้อมูลประกอบ ไม่ใช่เกณฑ์ของระบบ)</span>: ปิด ${day} ${num(R.close)} = ${b(R.r2)}` +
+    (R.last && R.r2_live != null ? ` · ตอนนี้ ${num(R.last)} ถ้าปิดที่ราคานี้ = ${b(R.r2_live)}` : '') +
+    ` <details style="display:inline"><summary class="mut" style="display:inline;cursor:pointer">สถิติย้อนหลัง</summary><span class="mut"> ·
+    RSI2 ตอนปิดต่ำกว่า 2: วันถัดไป SET บวก 55% (40 ครั้ง, เฉลี่ย +0.14%) · 2–5: บวก 51% · วันทั่วไป: บวก 51% ·
+    เมื่อวาน 5 ขึ้นไปแล้ววันนี้ปิดต่ำกว่า 5: วันถัดไปบวก 58% (55 ครั้ง, +0.13%) ·
+    เมื่อวาน 5–10: วันนี้ปิดต่ำกว่าราคาเปิด 62% (91 ครั้ง) ถ้าเปิดต่ำกว่าเมื่อวานด้วย 71% (34 ครั้ง) · เมื่อวานต่ำกว่า 5: ปิดต่ำกว่าเปิด 42–48% · วันทั่วไป 56% ·
+    ทุกกรณีต่างจากวันทั่วไปไม่เกิน 0.1–0.2% และช่วงความเชื่อมั่นกว้าง (ก.ค. 64–พ.ย. 69, ดัชนีจำลองถ่วงมูลค่าตลาดที่ตรงกับ SET)</span></details></div>`;
+}
+
 // 25 Nov 2026: 'Capitulation ATC' alert (snap.cap from live_monitor.cap_box). Alert only: no order is sent.
 // Evidence: rsi2_pullback_20261124 section 6 and reports/SET_dip_study/review_20261124 (followed list, Jul 2021 - Nov 2026).
 function capHtml() {
   const C = SNAP.cap;
   if (C === undefined) return '<span class="mut">กล่องนี้เริ่มแสดงหลังโปรแกรม Live รอบถัดไป</span>';
-  if (!C) return '<span class="mut">วันนี้ไม่มีข้อมูล (ต้องมีแผนถือหลายวันจาก premarket)</span>';
+  if (!C) return setR2Html() + '<span class="mut">วันนี้ไม่มีข้อมูล (ต้องมีแผนถือหลายวันจาก premarket)</span>';
   const p0 = v => v == null ? '–' : Math.round(v * 100) + '%';
   const lv = C.level === 'STRONG' ? `<b class="neg">STRONG: ตลาดถูกขายหนักทั้งกระดาน (ตั้งแต่ ${p0(C.strong)})</b>` : C.level === 'WATCH' ? `<b class="warn">WATCH: ตลาดถูกขายแรงทั้งกระดาน (ตั้งแต่ ${p0(C.watch)})</b>` : '<span class="mut">ยังไม่เข้าเกณฑ์</span>';
-  let o = `<div>หุ้นที่ติดตามที่ราคาตอนนี้ต่ำกว่าราคาปิดเมื่อวานเกิน 1 ATR: <b>${p0(C.frac)}</b> <span class="mut">(${C.n_down}/${C.n} ตัว · เวลา ${esc(String(C.hm || '').slice(0, 5))})</span> → ${lv}` +
+  let o = setR2Html() + `<div>หุ้นที่ติดตามที่ราคาตอนนี้ต่ำกว่าราคาปิดเมื่อวานเกิน 1 ATR: <b>${p0(C.frac)}</b> <span class="mut">(${C.n_down}/${C.n} ตัว · เวลา ${esc(String(C.hm || '').slice(0, 5))})</span> → ${lv}` +
     (C.day2 ? ` <span class="tchip tb">วันที่ 2 ต่อเนื่อง (เมื่อวาน ${p0(C.prev_drop)})</span>` : '') + '</div>';
   if (!C.active) o += `<div class="mut">ยังไม่ถึงช่วงเฝ้าดู (15:45 ถึงก่อนปิดตลาด) ตัวเลขด้านบนเป็นค่าระหว่างวัน ยังเปลี่ยนได้มาก</div>`;
   if (C.level) {
@@ -776,7 +793,7 @@ function swingHtml() {
   const L = S.live || {};
   let o = `<div style="margin-bottom:4px">ราคาปิด ${dm(S.asof)}: หุ้นที่ติดตามย่อแรงพร้อมกัน <b>${p0(S.breadth)}</b> ของ ${S.n_univ || ''} ตัว${S.drop == null ? '' : ` · ปิดลงเกิน 1 ATR ${p0(S.drop)}`} → <b>${tdesc(S.tier)}</b> ${tchip(S.tier)}` +
     (L.breadth == null ? '' : ` · <span class="mut">ตอนนี้ ${p0(L.breadth)}${L.drop == null ? '' : ' · ลงเกิน 1 ATR ' + p0(L.drop)} ถ้าปิดแบบนี้เป็นระดับ ${L.tier}</span>`) + '</div>' +
-    '<div class="mut" style="margin-bottom:6px;font-size:12.5px">ระดับ A+ = ย่อแรงพร้อมกันตั้งแต่ 35% หรือปิดลงเกิน 1 ATR ตั้งแต่ 15% (ราว 20 วันต่อปี มั่นใจสูงสุด) · A = ตั้งแต่ 20% · B = น้อยกว่า · ' +
+    setR2Html() + '<div class="mut" style="margin-bottom:6px;font-size:12.5px">ระดับ A+ = ย่อแรงพร้อมกันตั้งแต่ 35% หรือปิดลงเกิน 1 ATR ตั้งแต่ 15% (ราว 20 วันต่อปี มั่นใจสูงสุด) · A = ตั้งแต่ 20% · B = น้อยกว่า · ' +
     'ตั้งแต่ 25 พ.ย. 69 นับว่า "ได้ของ" เมื่อราคาลงต่ำกว่าราคาตั้งซื้อเท่านั้น ราคาต่ำสุดแตะพอดีไม่นับ (คิวซื้อที่ราคาต่ำสุดของวันมักไม่ได้ของ)</div>';
   if ((S.sectors || []).length || (L.sectors || []).length) o += `<div class="mut" style="margin-bottom:6px">กลุ่มที่ย่อแรงพร้อมกัน (ตัวที่ย่อ/ทั้งกลุ่ม): ${secLine(S.sectors) || '–'}` +
     ((L.sectors || []).length ? ` · <b>ตอนนี้</b> ${secLine(L.sectors)}` : '') + '</div>';
